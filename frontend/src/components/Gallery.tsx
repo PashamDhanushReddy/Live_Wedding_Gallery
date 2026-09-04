@@ -113,12 +113,18 @@ export default function Gallery({ initialPhotos, weddingSlug, sessionId }: { ini
             className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-4 sm:p-8"
             onClick={() => setSelectedPhoto(null)}
           >
-            <button 
-              className="absolute top-6 right-6 text-white/70 hover:text-white p-2"
-              onClick={() => setSelectedPhoto(null)}
-            >
-              <X className="w-6 h-6" />
-            </button>
+            {/* Top Bar Controls */}
+            <div className="absolute top-0 left-0 right-0 p-6 flex justify-between items-center z-10 pointer-events-none">
+              <div className="text-white/80 text-sm tracking-widest font-medium pointer-events-auto bg-black/40 px-3 py-1 rounded-full backdrop-blur-md">
+                {selectedIndex + 1} / {photos.length}
+              </div>
+              <button 
+                className="text-white/70 hover:text-white bg-black/40 p-2 rounded-full backdrop-blur-md pointer-events-auto transition-colors"
+                onClick={() => setSelectedPhoto(null)}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
             {selectedIndex > 0 && (
               <button 
@@ -155,18 +161,15 @@ export default function Gallery({ initialPhotos, weddingSlug, sessionId }: { ini
               />
             </motion.div>
 
-            <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between text-white/80">
-              <div className="text-sm tracking-widest font-medium">
-                {selectedIndex + 1} / {photos.length}
-              </div>
-              <div className="flex items-center gap-6">
-                <button onClick={handleDownload} className="hover:text-white transition-colors">
-                  <Download className="w-5 h-5" />
-                </button>
-                <button onClick={handleShare} className="hover:text-white transition-colors">
-                  <Share2 className="w-5 h-5" />
-                </button>
-              </div>
+            <div className="absolute bottom-6 left-0 right-0 flex justify-center items-center gap-6 z-10">
+              <button onClick={handleDownload} className="flex items-center gap-2 text-white/80 hover:text-white bg-white/10 px-6 py-2.5 rounded-full backdrop-blur-md transition-colors text-sm font-medium">
+                <Download className="w-4 h-4" />
+                Download
+              </button>
+              <button onClick={handleShare} className="flex items-center gap-2 text-white/80 hover:text-white bg-white/10 px-6 py-2.5 rounded-full backdrop-blur-md transition-colors text-sm font-medium">
+                <Share2 className="w-4 h-4" />
+                Share
+              </button>
             </div>
           </motion.div>
         )}
