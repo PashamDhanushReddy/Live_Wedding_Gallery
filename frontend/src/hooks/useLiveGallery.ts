@@ -11,7 +11,7 @@ export function useLiveGallery(weddingSlug: string, initialPhotos: Photo[], sess
     // Determine the appropriate websocket URL based on environment
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const channel = sessionId ? `guest_${sessionId}` : `weddings/${weddingSlug}`;
-    const wsUrl = `${protocol}//${window.location.hostname}:8000/ws/${channel}/`;
+    const wsUrl = `${protocol}//${window.location.host}/ws/${channel}/`;
 
     const connect = () => {
       wsRef.current = new WebSocket(wsUrl);
