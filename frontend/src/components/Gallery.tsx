@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ZoomIn } from 'lucide-react';
+import { X, ZoomIn, Download, Share2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLiveGallery } from '@/hooks/useLiveGallery';
 
 export type Photo = {
@@ -17,6 +17,56 @@ export type Photo = {
 export default function Gallery({ initialPhotos, weddingSlug, sessionId }: { initialPhotos: Photo[], weddingSlug: string, sessionId?: string | null }) {
   const photos = useLiveGallery(weddingSlug, initialPhotos, sessionId);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const selectedIndex = selectedPhoto ? photos.findIndex(p => p.id === selectedPhoto.id) : -1;
+
+  const goToNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (selectedIndex < photos.length - 1) {
+      setSelectedPhoto(photos[selectedIndex + 1]);
+    }
+  };
+
+  const goToPrev = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (selectedIndex > 0) {
+      setSelectedPhoto(photos[selectedIndex - 1]);
+    }
+  };
+
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!selectedPhoto) return;
+    try {
+      const response = await fetch(selectedPhoto.display_url || selectedPhoto.url);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `wedding-photo-${selectedPhoto.id}.jpg`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Error downloading image:", err);
+    }
+  };
+
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!selectedPhoto) return;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Wedding Photo',
+          text: 'Check out this photo from the wedding!',
+          url: selectedPhoto.display_url || selectedPhoto.url,
+        });
+      } catch (err) {
+        console.error("Error sharing:", err);
+      }
+    }
+  };
 
   // In Phase 6, we'll add WebSocket listener here to update 'photos'
 
@@ -60,20 +110,39 @@ export default function Gallery({ initialPhotos, weddingSlug, sessionId }: { ini
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 sm:p-8"
+            className="fixed inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-4 sm:p-8"
             onClick={() => setSelectedPhoto(null)}
           >
             <button 
-              className="absolute top-6 right-6 text-white/70 hover:text-white bg-black/50 p-2 rounded-full backdrop-blur-md"
+              className="absolute top-6 right-6 text-white/70 hover:text-white p-2"
               onClick={() => setSelectedPhoto(null)}
             >
               <X className="w-6 h-6" />
             </button>
+
+            {selectedIndex > 0 && (
+              <button 
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white p-2"
+                onClick={goToPrev}
+              >
+                <ChevronLeft className="w-8 h-8" />
+              </button>
+            )}
+
+            {selectedIndex < photos.length - 1 && (
+              <button 
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white p-2"
+                onClick={goToNext}
+              >
+                <ChevronRight className="w-8 h-8" />
+              </button>
+            )}
+
             <motion.div 
               initial={{ scale: 0.95 }}
               animate={{ scale: 1 }}
               exit={{ scale: 0.95 }}
-              className="relative w-full max-w-6xl max-h-full flex items-center justify-center"
+              className="relative w-full max-w-6xl max-h-full flex items-center justify-center flex-1 py-12"
               onClick={(e) => e.stopPropagation()}
             >
               <Image 
@@ -81,10 +150,24 @@ export default function Gallery({ initialPhotos, weddingSlug, sessionId }: { ini
                 alt={`Full Photo ${selectedPhoto.id}`}
                 width={selectedPhoto.width || 1920}
                 height={selectedPhoto.height || 1080}
-                className="max-w-full max-h-[85vh] w-auto h-auto object-contain rounded-md shadow-2xl"
+                className="max-w-full max-h-[80vh] w-auto h-auto object-contain shadow-2xl"
                 unoptimized
               />
             </motion.div>
+
+            <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between text-white/80">
+              <div className="text-sm tracking-widest font-medium">
+                {selectedIndex + 1} / {photos.length}
+              </div>
+              <div className="flex items-center gap-6">
+                <button onClick={handleDownload} className="hover:text-white transition-colors">
+                  <Download className="w-5 h-5" />
+                </button>
+                <button onClick={handleShare} className="hover:text-white transition-colors">
+                  <Share2 className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>

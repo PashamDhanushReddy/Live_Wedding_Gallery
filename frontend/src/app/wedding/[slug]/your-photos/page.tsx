@@ -1,101 +1,181 @@
 'use client';
 
-import { useState, use } from 'react';
-import { Camera, ShieldCheck } from 'lucide-react';
+import { useState, use, useEffect, useRef } from 'react';
+import { Camera, Lock, CheckCircle2, Circle, ChevronLeft, ScanFace } from 'lucide-react';
 import Link from 'next/link';
 import Gallery from '@/components/Gallery';
+import { motion } from 'framer-motion';
 
 export default function YourPhotosPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
-  const [consentGiven, setConsentGiven] = useState(false);
+  const [step, setStep] = useState<'capture' | 'processing' | 'results'>('capture');
   const [session, setSession] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   
+  // Simulated processing steps
+  const [processState, setProcessState] = useState(0);
+
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setIsUploading(true);
-      // In a real implementation, we would send this to the Django API
-      // e.g. POST /api/weddings/{slug}/guest/register/
+      const file = e.target.files[0];
+      setImagePreview(URL.createObjectURL(file));
+      setStep('processing');
+      
+      // Simulate steps
+      setTimeout(() => setProcessState(1), 1000); // Processing selfie
+      setTimeout(() => setProcessState(2), 2500); // Matching
+      
+      // In a real implementation, upload to Django
       setTimeout(() => {
-        setIsUploading(false);
-        setSession('mock-session-123'); // Store session ID
-      }, 1500);
+        setProcessState(3); // Almost there
+        setTimeout(() => {
+          setSession('mock-session-123');
+          setStep('results');
+        }, 800);
+      }, 4000);
     }
   };
 
-  if (!consentGiven) {
-    return (
-      <div className="min-h-[80vh] flex items-center justify-center p-6 text-white">
-        <div className="max-w-md w-full bg-neutral-900 border border-white/10 rounded-2xl p-8 space-y-6">
-          <div className="flex justify-center">
-            <div className="h-16 w-16 bg-white/5 rounded-full flex items-center justify-center">
-              <ShieldCheck className="w-8 h-8 text-neutral-300" />
-            </div>
-          </div>
-          <h2 className="text-2xl font-semibold text-center tracking-wider">Privacy & Consent</h2>
-          <p className="text-neutral-400 text-sm text-center leading-relaxed">
-            Your selfie will be processed securely to find photos from this wedding that may contain you.
-            Your selfie and face data will <strong className="text-white">not</strong> be publicly displayed or shared.
-          </p>
-          <div className="pt-4 space-y-3">
-            <button 
-              onClick={() => setConsentGiven(true)}
-              className="w-full bg-white text-black font-semibold py-3 rounded-lg hover:bg-neutral-200 transition-colors uppercase tracking-widest text-sm"
-            >
-              I Agree
-            </button>
-            <Link 
-              href={`/wedding/${slug}`}
-              className="w-full block text-center bg-transparent text-neutral-500 font-semibold py-3 rounded-lg hover:text-white hover:bg-white/5 transition-colors uppercase tracking-widest text-sm"
-            >
-              Cancel
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const TopBar = ({ title }: { title: string }) => (
+    <div className="flex items-center p-6 bg-[var(--color-background)] sticky top-0 z-10 border-b border-black/5">
+      <Link href={`/wedding/${slug}`} className="p-2 -ml-2 text-neutral-500 hover:bg-neutral-100 rounded-full transition-colors">
+        <ChevronLeft className="w-6 h-6" />
+      </Link>
+      <h1 className="flex-1 text-center font-serif text-xl mr-8">{title}</h1>
+    </div>
+  );
 
-  if (!session) {
+  if (step === 'capture') {
     return (
-      <div className="min-h-[80vh] flex items-center justify-center p-6 text-white">
-        <div className="max-w-md w-full space-y-8 text-center">
-          <div className="space-y-4">
-            <h2 className="text-3xl font-light tracking-widest uppercase">Selfie Match</h2>
-            <p className="text-neutral-400 text-sm">Take a photo to find your matches.</p>
+      <div className="min-h-screen bg-[var(--color-background)] flex flex-col">
+        <TopBar title="Find Your Photos" />
+        
+        <div className="flex-1 flex flex-col items-center p-6 text-center max-w-md mx-auto w-full">
+          <div className="mt-8 mb-6 h-16 w-16 bg-[var(--color-brand-light)] rounded-full flex items-center justify-center">
+            <Camera className="w-8 h-8 text-[var(--color-brand)]" />
           </div>
           
-          <div className={`relative aspect-[3/4] w-full bg-neutral-900 rounded-2xl border-2 border-dashed ${isUploading ? 'border-white/50 bg-neutral-800' : 'border-white/20'} flex flex-col items-center justify-center gap-4 hover:border-white/50 hover:bg-neutral-800 transition-all cursor-pointer overflow-hidden`}>
-             {!isUploading && <input type="file" accept="image/*" capture="user" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleUpload} />}
-             
-             {isUploading ? (
-                <div className="animate-pulse flex flex-col items-center">
-                    <div className="w-12 h-12 rounded-full border-4 border-white/20 border-t-white animate-spin mb-4" />
-                    <p className="text-sm tracking-widest uppercase text-white">Processing...</p>
-                </div>
-             ) : (
-                <>
-                    <Camera className="w-12 h-12 text-neutral-500" />
-                    <p className="text-sm font-medium tracking-widest uppercase text-neutral-500">Tap to capture</p>
-                </>
-             )}
+          <h2 className="font-serif text-3xl mb-3">Take a Selfie</h2>
+          <p className="text-neutral-500 text-sm max-w-[280px] mb-10">
+            We'll find photos where you appear using face matching.
+          </p>
+
+          {/* Scanner UI */}
+          <div className="relative w-full aspect-[4/5] max-w-[300px] mb-8 bg-neutral-100 rounded-2xl overflow-hidden flex items-center justify-center">
+            {/* Corner brackets */}
+            <div className="absolute inset-4 border-2 border-transparent border-t-white border-l-white rounded-tl-3xl w-12 h-12 z-10 opacity-70" />
+            <div className="absolute inset-4 right-4 left-auto border-2 border-transparent border-t-white border-r-white rounded-tr-3xl w-12 h-12 z-10 opacity-70" />
+            <div className="absolute inset-4 bottom-4 top-auto border-2 border-transparent border-b-white border-l-white rounded-bl-3xl w-12 h-12 z-10 opacity-70" />
+            <div className="absolute inset-4 bottom-4 top-auto right-4 left-auto border-2 border-transparent border-b-white border-r-white rounded-br-3xl w-12 h-12 z-10 opacity-70" />
+            
+            {imagePreview ? (
+              <img src={imagePreview} className="w-full h-full object-cover" alt="Preview" />
+            ) : (
+              <div className="text-neutral-300">
+                <ScanFace className="w-16 h-16" />
+              </div>
+            )}
+
+            <input 
+              type="file" 
+              accept="image/*" 
+              capture="user" 
+              onChange={handleUpload}
+              className="absolute inset-0 opacity-0 cursor-pointer z-20" 
+            />
+          </div>
+
+          <button className="w-full bg-[var(--color-brand)] text-white font-medium py-4 rounded-2xl flex items-center justify-center gap-3 active:scale-95 transition-transform shadow-lg shadow-brand/20 relative overflow-hidden group">
+            <Camera className="w-5 h-5" />
+            Capture Photo
+            <input 
+              type="file" 
+              accept="image/*" 
+              capture="user" 
+              onChange={handleUpload}
+              className="absolute inset-0 opacity-0 cursor-pointer" 
+            />
+          </button>
+
+          <div className="mt-8 flex items-start gap-3 text-left max-w-[280px]">
+            <Lock className="w-4 h-4 text-neutral-400 mt-1 flex-shrink-0" />
+            <p className="text-xs text-neutral-500 leading-relaxed">
+              Your selfie is only used to find your photos. We do not store or share it.
+            </p>
           </div>
         </div>
       </div>
     );
   }
 
+  if (step === 'processing') {
+    return (
+      <div className="min-h-screen bg-[var(--color-background)] flex flex-col">
+        <TopBar title="Find Your Photos" />
+        
+        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center max-w-md mx-auto w-full">
+          <div className="relative mb-12">
+            <svg className="w-32 h-32 text-neutral-200" viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="4" />
+              <motion.circle 
+                cx="50" cy="50" r="45" fill="none" 
+                stroke="var(--color-brand)" 
+                strokeWidth="4" 
+                strokeDasharray="283"
+                initial={{ strokeDashoffset: 283 }}
+                animate={{ strokeDashoffset: 0 }}
+                transition={{ duration: 4, ease: "linear" }}
+                strokeLinecap="round"
+                className="origin-center -rotate-90"
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center text-[var(--color-brand)]">
+              <ScanFace className="w-10 h-10" />
+            </div>
+          </div>
+          
+          <h2 className="font-serif text-2xl mb-2">Finding your photos...</h2>
+          <p className="text-neutral-500 text-sm mb-12">This may take a few seconds.</p>
+
+          <div className="w-full max-w-[280px] space-y-4 text-left">
+            <div className="flex items-center gap-4">
+              {processState >= 1 ? <CheckCircle2 className="w-5 h-5 text-green-600" /> : <Circle className="w-5 h-5 text-neutral-300" />}
+              <span className={`text-sm ${processState >= 1 ? 'text-neutral-900 font-medium' : 'text-neutral-500'}`}>Processing your selfie</span>
+            </div>
+            <div className="flex items-center gap-4">
+              {processState >= 2 ? <CheckCircle2 className="w-5 h-5 text-green-600" /> : <Circle className="w-5 h-5 text-neutral-300" />}
+              <span className={`text-sm ${processState >= 2 ? 'text-neutral-900 font-medium' : 'text-neutral-500'}`}>Matching with wedding photos</span>
+            </div>
+            <div className="flex items-center gap-4">
+              {processState >= 3 ? <CheckCircle2 className="w-5 h-5 text-green-600" /> : <Circle className="w-5 h-5 text-neutral-300" />}
+              <span className={`text-sm ${processState >= 3 ? 'text-neutral-900 font-medium' : 'text-neutral-500'}`}>Almost there...</span>
+            </div>
+          </div>
+
+          <div className="mt-auto pt-12 pb-6">
+            <div className="text-[var(--color-brand)] text-center text-sm mb-2">♥</div>
+            <p className="font-serif italic text-neutral-400">"Every face tells a story"</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Results step
   return (
-    <div className="min-h-[80vh] flex flex-col items-center justify-center text-center text-white p-10">
-      <h2 className="text-3xl font-light tracking-widest uppercase mb-4">Finding Matches</h2>
-      <p className="text-neutral-400 max-w-md">We are currently scanning the live feed. Photos containing you will appear here automatically.</p>
-      <div className="mt-12 flex justify-center w-full">
-         <div className="w-64 h-1 bg-neutral-900 rounded-full overflow-hidden relative">
-            <div className="absolute top-0 left-0 h-full bg-white/30 w-1/3 animate-[pulse_2s_ease-in-out_infinite] translate-x-[200%] transition-transform duration-1000"></div>
-         </div>
+    <div className="min-h-screen bg-[var(--color-background)] flex flex-col">
+      <TopBar title="Your Photos" />
+      
+      <div className="flex flex-col items-center text-center p-6">
+        <p className="text-neutral-600 text-sm mb-4">Here are the photos where you appear</p>
+        
+        {/* Placeholder count until websocket connects */}
+        <div className="bg-[var(--color-brand-light)] text-[var(--color-brand-dark)] px-4 py-1.5 rounded-full text-xs font-medium tracking-wide">
+          Scanning live feed...
+        </div>
       </div>
       
-      <div className="w-full mt-12 text-left">
+      <div className="flex-1 w-full pb-8">
          <Gallery initialPhotos={[]} weddingSlug={slug} sessionId={session} />
       </div>
     </div>
