@@ -1,0 +1,66 @@
+version: "3"
+
+services:
+  # 1. Redis for WebSockets and Celery (Free Tier doesn't allow persistence, using standard)
+  - type: redis
+    name: wedding-redis
+    ipAllowList: []
+    plan: free
+
+  # 2. Django Backend
+  - type: web
+    name: wedding-backend
+    env: docker
+    dockerContext: backend
+    dockerfilePath: backend/Dockerfile
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: wedding-redis
+          property: connectionString
+      - key: DEBUG
+        value: "False"
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+
+  # 3. Celery Worker
+  - type: worker
+    name: wedding-worker
+    env: docker
+    dockerContext: backend
+    dockerfilePath: backend/Dockerfile
+    dockerCommand: celery -A config worker -l info
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: wedding-redis
+          property: connectionString
+      - key: DEBUG
+        value: "False"
+      - key: DJANGO_SECRET_KEY
+        fromService:
+          type: web
+          name: wedding-backend
+          property: envVars.DJANGO_SECRET_KEY
+
+  # 4. Next.js Frontend
+  - type: web
+    name: wedding-frontend
+    env: docker
+    dockerContext: frontend
+    dockerfilePath: frontend/Dockerfile
+    plan: free
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        fromService:
+          type: web
+          name: wedding-backend
+          property: url
