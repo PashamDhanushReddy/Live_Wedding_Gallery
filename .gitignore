@@ -1,0 +1,12 @@
+.env
+venv/
+env/
+__pycache__/
+*.pyc
+node_modules/
+.DS_Store
+watcher.log
+test.txt
+uploader/WATCH_FOLDER/
+backend/db.sqlite3
+backend/media/
