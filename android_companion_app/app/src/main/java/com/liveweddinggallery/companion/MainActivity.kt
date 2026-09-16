@@ -44,12 +44,12 @@ class MainActivity : AppCompatActivity() {
     private fun setupFolderSpinner() {
         val spinner = findViewById<Spinner>(R.id.spinnerFolder)
         val folders = arrayOf(
-            "engagement",
-            "bride&groom",
-            "pre-wedding shoot",
-            "haldi",
-            "before wedding rituals",
-            "wedding day"
+            "Engagement",
+            "Bride & Groom",
+            "Pre-wedding Shoot",
+            "Haldi",
+            "Before Wedding Rituals",
+            "Wedding Day"
         )
         
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, folders)
