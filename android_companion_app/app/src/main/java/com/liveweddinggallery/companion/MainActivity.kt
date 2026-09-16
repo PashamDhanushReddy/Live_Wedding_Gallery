@@ -52,7 +52,8 @@ class MainActivity : AppCompatActivity() {
             "Wedding Day"
         )
         
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, folders)
+        val adapter = ArrayAdapter(this, R.layout.spinner_item, folders)
+        adapter.setDropDownViewResource(R.layout.spinner_dropdown_item)
         spinner.adapter = adapter
         
         // Restore previous selection if any
