@@ -113,7 +113,7 @@ export default function AdminGallery() {
     
     // API Call
     try {
-      const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/photos/${id}/`, {
+      const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/photographer/${id}/`, {
         method: "DELETE"
       });
       if (!res.ok) {
