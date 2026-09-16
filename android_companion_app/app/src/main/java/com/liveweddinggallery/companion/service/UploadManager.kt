@@ -10,7 +10,7 @@ import java.net.URL
 object UploadManager {
     private var job: Job? = null
     // You'd ideally store this config somewhere
-    private const val DJANGO_API_URL = "https://live-wedding-gallery.onrender.com/api/weddings/sandeepreddy-prathyusha/photographer/phone"
+    private const val DJANGO_API_URL = "https://live-wedding-gallery.onrender.com/api/weddings/sandeep-prathyusha/photographer/phone"
     private const val DEVICE_ID = "phone_01"
     
     fun start(context: Context) {
