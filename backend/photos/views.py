@@ -83,6 +83,25 @@ class PhotographerStatsView(APIView):
             "connection_status": status
         })
 
+import concurrent.futures
+
+# Global cache for the InsightFace model
+_face_app = None
+_face_lock = threading.Lock()
+
+def get_face_app():
+    global _face_app
+    if _face_app is None:
+        with _face_lock:
+            if _face_app is None:
+                from insightface.app import FaceAnalysis
+                _face_app = FaceAnalysis(name='buffalo_l')
+                _face_app.prepare(ctx_id=0, det_size=(640, 640))
+    return _face_app
+
+# Use a thread pool to prevent OOM when uploading 400 photos
+_upload_executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
+
 def process_manual_upload(wedding, filename, file_bytes, folder):
     try:
         from photos.serializers import PhotoSerializer
@@ -111,14 +130,14 @@ def process_manual_upload(wedding, filename, file_bytes, folder):
         
         # Face extraction
         try:
-            from insightface.app import FaceAnalysis
-            app = FaceAnalysis(name='buffalo_l')
-            app.prepare(ctx_id=0, det_size=(640, 640))
+            app = get_face_app()
             
             # Read from bytes
             np_arr = np.frombuffer(file_bytes, np.uint8)
             img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-            faces = app.get(img)
+            
+            with _face_lock:
+                faces = app.get(img)
             
             for face in faces:
                 bbox = face.bbox
@@ -159,10 +178,10 @@ class ManualUploadView(APIView):
         
         if not photos:
             return Response({"error": "No photos provided"}, status=400)
-            
+         # Process in background pool
         for photo_file in photos:
             file_bytes = photo_file.read()
             filename = photo_file.name
-            threading.Thread(target=process_manual_upload, args=(wedding, filename, file_bytes, folder)).start()
+            _upload_executor.submit(process_manual_upload, wedding, filename, file_bytes, folder)
             
         return Response({"status": "processing", "count": len(photos)})
