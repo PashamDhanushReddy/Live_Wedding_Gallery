@@ -239,52 +239,10 @@ class PhoneUploadView(APIView):
             file_bytes = photo_file.read()
             filename = photo_file.name
             
-            from photos.serializers import PhotoSerializer
-            upload_result = cloudinary.uploader.upload(
-                file_bytes,
-                folder=f"weddings/{wedding.slug}/{folder}/originals"
-            )
+            # Submit to background executor to prevent blocking
+            _upload_executor.submit(process_manual_upload, wedding, filename, file_bytes, folder)
             
-            photo = Photo.objects.create(
-                wedding=wedding,
-                original_filename=filename,
-                cloudinary_public_id=upload_result.get('public_id'),
-                secure_url=upload_result.get('secure_url'),
-                cloudinary_url=upload_result.get('url'),
-                width=upload_result.get('width'),
-                height=upload_result.get('height'),
-                file_size=upload_result.get('bytes'),
-                folder=folder,
-                processing_status='PROCESSING',
-                upload_status='COMPLETED',
-                captured_at=timezone.now()
-            )
-            
-            try:
-                app = get_face_app()
-                np_arr = np.frombuffer(file_bytes, np.uint8)
-                img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-                with _face_lock:
-                    faces = app.get(img)
-                for face in faces:
-                    bbox = face.bbox
-                    embedding = face.embedding.tolist()
-                    Face.objects.create(
-                        photo=photo, embedding=embedding, x=bbox[0], y=bbox[1],
-                        width=bbox[2]-bbox[0], height=bbox[3]-bbox[1], detection_confidence=face.det_score
-                    )
-            except Exception as e:
-                logger.error(f"Face extraction failed: {e}")
-                
-            photo.processing_status = 'COMPLETED'
-            photo.save()
-            
-            channel_layer = get_channel_layer()
-            async_to_sync(channel_layer.group_send)(
-                f'wedding_{wedding.slug}',
-                {'type': 'new_photo', 'photo': PhotoSerializer(photo).data}
-            )
-            return Response({'status': 'uploaded'})
+            return Response({'status': 'processing'})
         except Exception as e:
             logger.error(f"Phone upload error: {e}")
             return Response({'error': str(e)}, status=500)

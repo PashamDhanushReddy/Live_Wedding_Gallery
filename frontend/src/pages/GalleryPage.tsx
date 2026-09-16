@@ -19,7 +19,16 @@ export default function GalleryPage() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const tabs = ["All", "Engagement", "Haldi", "Mehendi", "Wedding Day", "Reception", "Uncategorized"];
+  const tabs = [
+    "All",
+    "Engagement",
+    "Bride & Groom",
+    "Pre-wedding Shoot",
+    "Haldi",
+    "Before Wedding Rituals",
+    "Wedding Day",
+    "Uncategorized"
+  ];
 
   useEffect(() => {
     // 1. Fetch initial photos
