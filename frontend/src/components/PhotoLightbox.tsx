@@ -95,7 +95,18 @@ export default function PhotoLightbox({ photos, initialIndex, onClose }: PhotoLi
             transition={{ duration: 0.2 }}
             src={currentPhoto?.url}
             alt="Wedding Photo"
-            className="max-w-full max-h-[60vh] md:max-h-[85vh] object-contain rounded-md"
+            className="max-w-full max-h-[60vh] md:max-h-[85vh] object-contain rounded-md touch-none"
+            drag="x"
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.7}
+            onDragEnd={(e, { offset, velocity }) => {
+              const swipe = Math.abs(offset.x) * velocity.x;
+              if (swipe < -10000) {
+                handleNext();
+              } else if (swipe > 10000) {
+                handlePrev();
+              }
+            }}
           />
           
           <button 
