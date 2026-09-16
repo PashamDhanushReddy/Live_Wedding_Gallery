@@ -31,7 +31,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-gq8qif6wzdswo5c@x--(i
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['*'] # In production, restrict this to your Render URL
+ALLOWED_HOSTS = ['live-wedding-gallery.onrender.com', 'localhost', '127.0.0.1']
 
 
 # Application definition
@@ -113,10 +113,11 @@ CHANNEL_LAYERS = {
 }
 
 # Configure CORS for GitHub Pages
-CORS_ALLOW_ALL_ORIGINS = True # Change to False and add GH Pages URL below if needed
-# CORS_ALLOWED_ORIGINS = [
-#     "https://yourusername.github.io",
-# ]
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = [
+    "https://pashamdhanushreddy.github.io",
+    "http://localhost:5173", # for local vite development
+]
 
 
 # Password validation
