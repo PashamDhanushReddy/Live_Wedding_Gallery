@@ -144,6 +144,11 @@ def process_manual_upload(wedding, filename, file_bytes, folder):
     try:
         from photos.serializers import PhotoSerializer
         
+        # Prevent duplicates
+        if Photo.objects.filter(wedding=wedding, original_filename=filename).exists():
+            logger.info(f"Duplicate detected for {filename}, skipping upload.")
+            return
+            
         logger.info(f"Uploading {filename} to Cloudinary folder {folder}...")
         upload_result = cloudinary.uploader.upload(
             file_bytes,
