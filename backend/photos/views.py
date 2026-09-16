@@ -2,7 +2,7 @@ from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from .models import CameraConnection, Transfer, Photo
+from .models import CameraConnection, Transfer, Photo, PhoneDevice
 from .serializers import CameraConnectionSerializer, TransferSerializer
 from weddings.models import Wedding
 from faces.models import Face
@@ -73,14 +73,21 @@ class PhotographerStatsView(APIView):
         processing = Photo.objects.filter(wedding=wedding, processing_status='PROCESSING').count()
         failed = Photo.objects.filter(wedding=wedding, processing_status='FAILED').count()
         
-        connection = CameraConnection.objects.filter(wedding=wedding).first()
-        status = connection.connection_status if connection else 'DISCONNECTED'
+        phone = PhoneDevice.objects.filter(wedding=wedding).order_by('-last_seen').first()
+        status = phone.ftp_status if phone else 'STOPPED'
+        local_ip = phone.local_ip if phone else 'Not connected'
+        storage = phone.storage_usage_mb if phone else 0.0
+        waiting = phone.queue_waiting if phone else 0
+        failed_q = phone.queue_failed if phone else 0
         
         return Response({
             "total_photos": total_photos,
             "processing": processing,
-            "failed": failed,
-            "connection_status": status
+            "failed": failed + failed_q,
+            "connection_status": status,
+            "local_ip": local_ip,
+            "storage_mb": storage,
+            "queue_waiting": waiting
         })
 
 import concurrent.futures
@@ -185,3 +192,99 @@ class ManualUploadView(APIView):
             _upload_executor.submit(process_manual_upload, wedding, filename, file_bytes, folder)
             
         return Response({"status": "processing", "count": len(photos)})
+
+class PhoneAuthView(APIView):
+    def post(self, request, slug):
+        wedding = get_object_or_404(Wedding, slug=slug, is_active=True)
+        device_id = request.data.get('device_id')
+        if not device_id:
+            return Response({'error': 'device_id required'}, status=400)
+            
+        device, _ = PhoneDevice.objects.get_or_create(
+            wedding=wedding, 
+            device_id=device_id
+        )
+        return Response({'status': 'authenticated', 'device_id': device.device_id})
+
+class PhoneSyncView(APIView):
+    def post(self, request, slug):
+        wedding = get_object_or_404(Wedding, slug=slug, is_active=True)
+        device_id = request.data.get('device_id')
+        if not device_id:
+            return Response({'error': 'device_id required'}, status=400)
+            
+        device = get_object_or_404(PhoneDevice, wedding=wedding, device_id=device_id)
+        
+        device.local_ip = request.data.get('local_ip', device.local_ip)
+        device.storage_usage_mb = request.data.get('storage_usage_mb', device.storage_usage_mb)
+        device.ftp_status = request.data.get('ftp_status', device.ftp_status)
+        device.queue_waiting = request.data.get('queue_waiting', device.queue_waiting)
+        device.queue_failed = request.data.get('queue_failed', device.queue_failed)
+        device.last_seen = timezone.now()
+        device.save()
+        
+        return Response({'status': 'synced'})
+
+class PhoneUploadView(APIView):
+    def post(self, request, slug):
+        wedding = get_object_or_404(Wedding, slug=slug, is_active=True)
+        device_id = request.data.get('device_id')
+        folder = request.data.get('folder', 'Uncategorized')
+        photo_file = request.FILES.get('photo')
+        
+        if not photo_file:
+            return Response({'error': 'No photo provided'}, status=400)
+            
+        try:
+            file_bytes = photo_file.read()
+            filename = photo_file.name
+            
+            from photos.serializers import PhotoSerializer
+            upload_result = cloudinary.uploader.upload(
+                file_bytes,
+                folder=f"weddings/{wedding.slug}/{folder}/originals"
+            )
+            
+            photo = Photo.objects.create(
+                wedding=wedding,
+                original_filename=filename,
+                cloudinary_public_id=upload_result.get('public_id'),
+                secure_url=upload_result.get('secure_url'),
+                cloudinary_url=upload_result.get('url'),
+                width=upload_result.get('width'),
+                height=upload_result.get('height'),
+                file_size=upload_result.get('bytes'),
+                folder=folder,
+                processing_status='PROCESSING',
+                upload_status='COMPLETED',
+                captured_at=timezone.now()
+            )
+            
+            try:
+                app = get_face_app()
+                np_arr = np.frombuffer(file_bytes, np.uint8)
+                img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+                with _face_lock:
+                    faces = app.get(img)
+                for face in faces:
+                    bbox = face.bbox
+                    embedding = face.embedding.tolist()
+                    Face.objects.create(
+                        photo=photo, embedding=embedding, x=bbox[0], y=bbox[1],
+                        width=bbox[2]-bbox[0], height=bbox[3]-bbox[1], detection_confidence=face.det_score
+                    )
+            except Exception as e:
+                logger.error(f"Face extraction failed: {e}")
+                
+            photo.processing_status = 'COMPLETED'
+            photo.save()
+            
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f'wedding_{wedding.slug}',
+                {'type': 'new_photo', 'photo': PhotoSerializer(photo).data}
+            )
+            return Response({'status': 'uploaded'})
+        except Exception as e:
+            logger.error(f"Phone upload error: {e}")
+            return Response({'error': str(e)}, status=500)

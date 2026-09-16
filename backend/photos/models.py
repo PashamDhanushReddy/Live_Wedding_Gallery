@@ -77,3 +77,26 @@ class Transfer(models.Model):
 
     def __str__(self):
         return f"Transfer {self.filename} - {self.status}"
+
+class PhoneDevice(models.Model):
+    STATUS_CHOICES = [
+        ('RUNNING', 'Running'),
+        ('STOPPED', 'Stopped'),
+    ]
+
+    wedding = models.ForeignKey(Wedding, on_delete=models.CASCADE, related_name='phone_devices')
+    device_id = models.CharField(max_length=255)
+    local_ip = models.CharField(max_length=100, blank=True, null=True)
+    storage_usage_mb = models.FloatField(default=0.0)
+    ftp_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='STOPPED')
+    queue_waiting = models.IntegerField(default=0)
+    queue_failed = models.IntegerField(default=0)
+    last_seen = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('wedding', 'device_id')
+
+    def __str__(self):
+        return f"Phone {self.device_id} for {self.wedding.slug} - {self.ftp_status}"
