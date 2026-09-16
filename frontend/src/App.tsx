@@ -10,6 +10,11 @@ import AdminPhotos from "./pages/admin/AdminPhotos";
 import AdminFaces from "./pages/admin/AdminFaces";
 import AdminSettings from "./pages/admin/AdminSettings";
 
+import PhotographerLayout from "./components/layout/PhotographerLayout";
+import PhotographerDashboard from "./pages/photographer/Dashboard";
+import CameraConnection from "./pages/photographer/CameraConnection";
+import LiveTransfers from "./pages/photographer/LiveTransfers";
+
 function App() {
   return (
     <HashRouter>
@@ -19,6 +24,14 @@ function App() {
           <Route path="photos" element={<GalleryPage />} />
           <Route path="find" element={<FindPhotosPage />} />
         </Route>
+        
+        {/* Photographer Portal */}
+        <Route path="/photographer" element={<PhotographerLayout />}>
+          <Route index element={<PhotographerDashboard />} />
+          <Route path="camera" element={<CameraConnection />} />
+          <Route path="transfers" element={<LiveTransfers />} />
+        </Route>
+
         {/* Admin portal could have a different layout */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<AdminDashboard />} />

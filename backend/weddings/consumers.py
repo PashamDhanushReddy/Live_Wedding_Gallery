@@ -29,3 +29,10 @@ class WeddingGalleryConsumer(AsyncWebsocketConsumer):
             'type': 'new_photo',
             'photo': photo
         }))
+
+    async def transfer_update(self, event):
+        transfer = event['transfer']
+        await self.send(text_data=json.dumps({
+            'type': 'transfer_update',
+            'transfer': transfer
+        }))

@@ -30,3 +30,48 @@ class Photo(models.Model):
 
     def __str__(self):
         return f"Photo {self.id} for {self.wedding.slug}"
+
+class CameraConnection(models.Model):
+    STATUS_CHOICES = [
+        ('CONNECTED', 'Connected'),
+        ('CONNECTING', 'Connecting'),
+        ('DISCONNECTED', 'Disconnected'),
+    ]
+
+    wedding = models.ForeignKey(Wedding, on_delete=models.CASCADE, related_name='camera_connections')
+    host = models.CharField(max_length=255)
+    port = models.IntegerField(default=21)
+    username = models.CharField(max_length=100)
+    remote_directory = models.CharField(max_length=255, default='/DCIM/')
+    connection_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DISCONNECTED')
+    last_connected = models.DateTimeField(null=True, blank=True)
+    last_photo_received = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Camera {self.username} for {self.wedding.slug} - {self.connection_status}"
+
+class Transfer(models.Model):
+    STATUS_CHOICES = [
+        ('UPLOADING', 'Uploading'),
+        ('UPLOADED', 'Uploaded'),
+        ('PROCESSING', 'Processing'),
+        ('COMPLETED', 'Completed'),
+        ('FAILED', 'Failed'),
+    ]
+
+    camera = models.ForeignKey(CameraConnection, on_delete=models.CASCADE, related_name='transfers')
+    photo = models.ForeignKey(Photo, on_delete=models.SET_NULL, null=True, blank=True, related_name='transfers')
+    filename = models.CharField(max_length=255)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='UPLOADING')
+    progress = models.IntegerField(default=0) # 0 to 100
+    error_message = models.TextField(blank=True, null=True)
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ['-started_at']
+
+    def __str__(self):
+        return f"Transfer {self.filename} - {self.status}"

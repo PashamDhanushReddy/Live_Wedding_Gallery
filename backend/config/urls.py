@@ -12,6 +12,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/health/', health_check, name='health_check'),
     path('api/weddings/', include('weddings.urls')),
+    path('api/weddings/<slug:slug>/photographer/', include('photos.urls')),
 ]
 
 if settings.DEBUG:

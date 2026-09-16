@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 
 import PhotoLightbox from "../components/PhotoLightbox";
-import { API_BASE_URL, WEDDING_SLUG } from "../config";
+import { API_BASE_URL, WS_BASE_URL, WEDDING_SLUG } from "../config";
 
 interface Photo {
   id: number;
@@ -23,6 +23,26 @@ export default function FindPhotosPage() {
   const [matchedPhotos, setMatchedPhotos] = useState<Photo[]>([]);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (step !== "results") return;
+
+    let ws: WebSocket | null = null;
+    try {
+      ws = new WebSocket(`${WS_BASE_URL}/weddings/${WEDDING_SLUG}/`);
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'new_photo') {
+          // Silent refresh of matches when a new photo arrives
+          handleUploadClick(true);
+        }
+      };
+    } catch (_) {}
+
+    return () => {
+      ws?.close();
+    };
+  }, [step]);
+
   const openLightbox = (index: number) => {
     setCurrentPhotoIndex(index);
     setLightboxOpen(true);
@@ -34,11 +54,13 @@ export default function FindPhotosPage() {
     }
   };
 
-  const handleUploadClick = async () => {
+  const handleUploadClick = async (silent = false) => {
     if (!selectedFile) return;
     
-    setStep("processing");
-    setError(null);
+    if (!silent) {
+      setStep("processing");
+      setError(null);
+    }
     
     const formData = new FormData();
     formData.append("file", selectedFile);
