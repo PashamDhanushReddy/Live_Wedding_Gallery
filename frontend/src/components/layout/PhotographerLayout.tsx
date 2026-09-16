@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Camera, Activity, LayoutDashboard, LogOut } from "lucide-react";
+import { Camera, Activity, LayoutDashboard, LogOut, UploadCloud } from "lucide-react";
 import clsx from "clsx";
 
 export default function PhotographerLayout() {
@@ -9,6 +9,7 @@ export default function PhotographerLayout() {
     { name: "Dashboard", path: "/photographer", icon: LayoutDashboard },
     { name: "Camera", path: "/photographer/camera", icon: Camera },
     { name: "Live Transfers", path: "/photographer/transfers", icon: Activity },
+    { name: "Manual Upload", path: "/photographer/upload", icon: UploadCloud },
   ];
 
   return (

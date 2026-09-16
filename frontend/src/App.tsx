@@ -14,6 +14,7 @@ import PhotographerLayout from "./components/layout/PhotographerLayout";
 import PhotographerDashboard from "./pages/photographer/Dashboard";
 import CameraConnection from "./pages/photographer/CameraConnection";
 import LiveTransfers from "./pages/photographer/LiveTransfers";
+import ManualUpload from "./pages/photographer/ManualUpload";
 
 function App() {
   return (
@@ -30,6 +31,7 @@ function App() {
           <Route index element={<PhotographerDashboard />} />
           <Route path="camera" element={<CameraConnection />} />
           <Route path="transfers" element={<LiveTransfers />} />
+          <Route path="upload" element={<ManualUpload />} />
         </Route>
 
         {/* Admin portal could have a different layout */}
