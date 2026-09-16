@@ -1,10 +1,14 @@
 [
     {
-        "merged": "com.liveweddinggallery.companion.app-debug-31:/layout_activity_main.xml.flat",
-        "source": "com.liveweddinggallery.companion.app-main-33:/layout/activity_main.xml"
-    },
-    {
         "merged": "C:\\Users\\Thokala Rakesh\\.gradle\\daemon\\8.7\\com.liveweddinggallery.companion.app-debug-31:\\layout_activity_main.xml.flat",
         "source": "C:\\Users\\Thokala Rakesh\\.gradle\\daemon\\8.7\\com.liveweddinggallery.companion.app-main-33:\\layout\\activity_main.xml"
+    },
+    {
+        "merged": "com.liveweddinggallery.companion.app-debug-31:/layout_spinner_item.xml.flat",
+        "source": "com.liveweddinggallery.companion.app-main-33:/layout/spinner_item.xml"
+    },
+    {
+        "merged": "com.liveweddinggallery.companion.app-debug-31:/layout_spinner_dropdown_item.xml.flat",
+        "source": "com.liveweddinggallery.companion.app-main-33:/layout/spinner_dropdown_item.xml"
     }
 ]

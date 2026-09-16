@@ -3,3 +3,5 @@ local
 id spinnerFolder
 id tvIpAddress
 layout activity_main
+layout spinner_dropdown_item
+layout spinner_item
