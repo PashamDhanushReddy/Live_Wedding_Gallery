@@ -113,8 +113,12 @@ export default function AdminGallery() {
     
     // API Call
     try {
+      const token = localStorage.getItem("photographer_token");
       const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/photographer/${id}/`, {
-        method: "DELETE"
+        method: "DELETE",
+        headers: {
+          "Authorization": `Token ${token}`
+        }
       });
       if (!res.ok) {
         console.error("Failed to delete photo on backend");

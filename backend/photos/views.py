@@ -1,6 +1,7 @@
 from rest_framework import generics
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from .models import CameraConnection, Transfer, Photo, PhoneDevice
 from .serializers import CameraConnectionSerializer, TransferSerializer
@@ -107,6 +108,8 @@ def get_face_app():
     return _face_app
 
 class PhotoDeleteView(APIView):
+    permission_classes = [IsAuthenticated]
+    
     def delete(self, request, slug, pk):
         try:
             wedding = get_object_or_404(Wedding, slug=slug, is_active=True)

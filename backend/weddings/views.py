@@ -1,6 +1,9 @@
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from django.contrib.auth import authenticate
+from rest_framework.authtoken.models import Token
+from rest_framework.views import APIView
 from django.shortcuts import get_object_or_404
 from .models import Wedding
 from .serializers import WeddingSerializer
@@ -10,6 +13,18 @@ from photos.serializers import PhotoSerializer
 class WeddingListCreateView(generics.ListCreateAPIView):
     queryset = Wedding.objects.all().order_by('-created_at')
     serializer_class = WeddingSerializer
+
+class PhotographerLoginView(APIView):
+    def post(self, request, slug):
+        wedding = get_object_or_404(Wedding, slug=slug, is_active=True)
+        username = request.data.get('username')
+        password = request.data.get('password')
+        
+        user = authenticate(username=username, password=password)
+        if user:
+            token, _ = Token.objects.get_or_create(user=user)
+            return Response({'status': 'success', 'token': token.key})
+        return Response({'status': 'error', 'message': 'Invalid credentials'}, status=401)
 
 class WeddingDetailView(generics.RetrieveAPIView):
     queryset = Wedding.objects.filter(is_active=True)

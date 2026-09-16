@@ -1,9 +1,15 @@
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useLocation, Navigate, useNavigate } from "react-router-dom";
 import { Camera, Activity, LayoutDashboard, LogOut, UploadCloud } from "lucide-react";
 import clsx from "clsx";
 
 export default function PhotographerLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const token = localStorage.getItem("photographer_token");
+
+  if (!token) {
+    return <Navigate to="/photographer/login" replace />;
+  }
 
   const navItems = [
     { name: "Dashboard", path: "/photographer", icon: LayoutDashboard },
@@ -45,7 +51,17 @@ export default function PhotographerLayout() {
           })}
         </nav>
 
-        <div className="p-4 border-t border-neutral-800">
+        <div className="p-4 border-t border-neutral-800 space-y-2">
+          <button
+            onClick={() => {
+              localStorage.removeItem("photographer_token");
+              navigate("/photographer/login");
+            }}
+            className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-neutral-400 hover:bg-rose-500/10 hover:text-rose-400 transition-colors"
+          >
+            <LogOut className="w-5 h-5" />
+            <span>Sign Out</span>
+          </button>
           <Link
             to="/"
             className="flex items-center space-x-3 px-4 py-3 rounded-xl text-neutral-400 hover:bg-neutral-800 hover:text-neutral-200 transition-colors"

@@ -1,0 +1,144 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="com.liveweddinggallery.companion"
+4    android:versionCode="1"
+5    android:versionName="1.0" >
+6
+7    <uses-sdk
+8        android:minSdkVersion="24"
+9        android:targetSdkVersion="34" />
+10
+11    <uses-permission android:name="android.permission.INTERNET" />
+11-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:5:5-67
+11-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:5:22-64
+12    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+12-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:6:5-79
+12-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:6:22-76
+13    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+13-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:7:5-76
+13-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:7:22-73
+14    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+14-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:8:5-77
+14-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:8:22-74
+15
+16    <permission
+16-->[androidx.core:core:1.12.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\461c260dad2b37d78d1651aec257e483\workspace\transformed\core-1.12.0\AndroidManifest.xml:22:5-24:47
+17        android:name="com.liveweddinggallery.companion.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+17-->[androidx.core:core:1.12.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\461c260dad2b37d78d1651aec257e483\workspace\transformed\core-1.12.0\AndroidManifest.xml:23:9-81
+18        android:protectionLevel="signature" />
+18-->[androidx.core:core:1.12.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\461c260dad2b37d78d1651aec257e483\workspace\transformed\core-1.12.0\AndroidManifest.xml:24:9-44
+19
+20    <uses-permission android:name="com.liveweddinggallery.companion.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+20-->[androidx.core:core:1.12.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\461c260dad2b37d78d1651aec257e483\workspace\transformed\core-1.12.0\AndroidManifest.xml:26:5-97
+20-->[androidx.core:core:1.12.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\461c260dad2b37d78d1651aec257e483\workspace\transformed\core-1.12.0\AndroidManifest.xml:26:22-94
+21
+22    <application
+22-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:10:5-25:19
+23        android:allowBackup="true"
+23-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:11:9-35
+24        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+24-->[androidx.core:core:1.12.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\461c260dad2b37d78d1651aec257e483\workspace\transformed\core-1.12.0\AndroidManifest.xml:28:18-86
+25        android:debuggable="true"
+26        android:extractNativeLibs="false"
+27        android:icon="@mipmap/ic_launcher"
+27-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:12:9-43
+28        android:label="Wedding Companion"
+28-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:13:9-42
+29        android:supportsRtl="true"
+29-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:14:9-35
+30        android:testOnly="true"
+31        android:theme="@style/Theme.AppCompat.Light.NoActionBar" >
+31-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:15:9-65
+32        <activity
+32-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:17:9-22:20
+33            android:name="com.liveweddinggallery.companion.MainActivity"
+33-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:17:19-47
+34            android:exported="true" >
+34-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:17:48-71
+35            <intent-filter>
+35-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:18:13-21:29
+36                <action android:name="android.intent.action.MAIN" />
+36-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:19:17-69
+36-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:19:25-66
+37
+38                <category android:name="android.intent.category.LAUNCHER" />
+38-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:20:17-77
+38-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:20:27-74
+39            </intent-filter>
+40        </activity>
+41
+42        <service
+42-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:24:9-86
+43            android:name="com.liveweddinggallery.companion.service.FtpServerService"
+43-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:24:18-58
+44            android:exported="false" />
+44-->C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:24:59-83
+45
+46        <provider
+46-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\8e29bd952ae211afa436aa892bcd0afe\workspace\transformed\emoji2-1.2.0\AndroidManifest.xml:24:9-32:20
+47            android:name="androidx.startup.InitializationProvider"
+47-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\8e29bd952ae211afa436aa892bcd0afe\workspace\transformed\emoji2-1.2.0\AndroidManifest.xml:25:13-67
+48            android:authorities="com.liveweddinggallery.companion.androidx-startup"
+48-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\8e29bd952ae211afa436aa892bcd0afe\workspace\transformed\emoji2-1.2.0\AndroidManifest.xml:26:13-68
+49            android:exported="false" >
+49-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\8e29bd952ae211afa436aa892bcd0afe\workspace\transformed\emoji2-1.2.0\AndroidManifest.xml:27:13-37
+50            <meta-data
+50-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\8e29bd952ae211afa436aa892bcd0afe\workspace\transformed\emoji2-1.2.0\AndroidManifest.xml:29:13-31:52
+51                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+51-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\8e29bd952ae211afa436aa892bcd0afe\workspace\transformed\emoji2-1.2.0\AndroidManifest.xml:30:17-75
+52                android:value="androidx.startup" />
+52-->[androidx.emoji2:emoji2:1.2.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\8e29bd952ae211afa436aa892bcd0afe\workspace\transformed\emoji2-1.2.0\AndroidManifest.xml:31:17-49
+53            <meta-data
+53-->[androidx.lifecycle:lifecycle-process:2.6.1] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\ec6e3558b7ec229e1a5a9a9684ff706c\workspace\transformed\lifecycle-process-2.6.1\AndroidManifest.xml:29:13-31:52
+54                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+54-->[androidx.lifecycle:lifecycle-process:2.6.1] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\ec6e3558b7ec229e1a5a9a9684ff706c\workspace\transformed\lifecycle-process-2.6.1\AndroidManifest.xml:30:17-78
+55                android:value="androidx.startup" />
+55-->[androidx.lifecycle:lifecycle-process:2.6.1] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\ec6e3558b7ec229e1a5a9a9684ff706c\workspace\transformed\lifecycle-process-2.6.1\AndroidManifest.xml:31:17-49
+56            <meta-data
+56-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\82522e57893396d01741468c6b384392\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:29:13-31:52
+57                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+57-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\82522e57893396d01741468c6b384392\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:30:17-85
+58                android:value="androidx.startup" />
+58-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\82522e57893396d01741468c6b384392\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:31:17-49
+59        </provider>
+60
+61        <receiver
+61-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\82522e57893396d01741468c6b384392\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:34:9-52:20
+62            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+62-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\82522e57893396d01741468c6b384392\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:35:13-76
+63            android:directBootAware="false"
+63-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\82522e57893396d01741468c6b384392\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:36:13-44
+64            android:enabled="true"
+64-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\82522e57893396d01741468c6b384392\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:37:13-35
+65            android:exported="true"
+65-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\82522e57893396d01741468c6b384392\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:38:13-36
+66            android:permission="android.permission.DUMP" >
+66-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\82522e57893396d01741468c6b384392\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:39:13-57
+67            <intent-filter>
+67-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\82522e57893396d01741468c6b384392\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:40:13-42:29
+68                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+68-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\82522e57893396d01741468c6b384392\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:41:17-91
+68-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\82522e57893396d01741468c6b384392\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:41:25-88
+69            </intent-filter>
+70            <intent-filter>
+70-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\82522e57893396d01741468c6b384392\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:43:13-45:29
+71                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+71-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\82522e57893396d01741468c6b384392\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:44:17-85
+71-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\82522e57893396d01741468c6b384392\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:44:25-82
+72            </intent-filter>
+73            <intent-filter>
+73-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\82522e57893396d01741468c6b384392\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:46:13-48:29
+74                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+74-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\82522e57893396d01741468c6b384392\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:47:17-88
+74-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\82522e57893396d01741468c6b384392\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:47:25-85
+75            </intent-filter>
+76            <intent-filter>
+76-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\82522e57893396d01741468c6b384392\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:49:13-51:29
+77                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+77-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\82522e57893396d01741468c6b384392\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:50:17-95
+77-->[androidx.profileinstaller:profileinstaller:1.3.0] C:\Users\Thokala Rakesh\.gradle\caches\9.3.0\transforms\82522e57893396d01741468c6b384392\workspace\transformed\profileinstaller-1.3.0\AndroidManifest.xml:50:25-92
+78            </intent-filter>
+79        </receiver>
+80    </application>
+81
+82</manifest>

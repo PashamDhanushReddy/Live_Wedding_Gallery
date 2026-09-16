@@ -16,6 +16,7 @@ import CameraConnection from "./pages/photographer/CameraConnection";
 import LiveTransfers from "./pages/photographer/LiveTransfers";
 import ManualUpload from "./pages/photographer/ManualUpload";
 import AdminGallery from "./pages/photographer/AdminGallery";
+import PhotographerLogin from "./pages/photographer/Login";
 
 function App() {
   return (
@@ -28,6 +29,8 @@ function App() {
         </Route>
         
         {/* Photographer Portal */}
+        <Route path="/photographer/login" element={<PhotographerLogin />} />
+        
         <Route path="/photographer" element={<PhotographerLayout />}>
           <Route index element={<PhotographerDashboard />} />
           <Route path="camera" element={<CameraConnection />} />

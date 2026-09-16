@@ -1,0 +1,20 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.liveweddinggallery.companion.app-mergeDebugResources-29:/values-hdpi-v4/values-hdpi-v4.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\Thokala Rakesh\\.gradle\\caches\\transforms-4\\1d0b73c1e6202bd04cbed8587327f893\\transformed\\appcompat-1.6.1\\res\\values-hdpi-v4\\values-hdpi-v4.xml",
+                    "from": {
+                        "startLines": "2",
+                        "startColumns": "4",
+                        "startOffsets": "55",
+                        "endLines": "6",
+                        "endColumns": "13",
+                        "endOffsets": "327"
+                    }
+                }
+            ]
+        }
+    ]
+}
