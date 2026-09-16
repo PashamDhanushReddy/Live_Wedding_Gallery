@@ -47,7 +47,7 @@ object UploadManager {
         } ?: return
 
         val prefs = context.getSharedPreferences("WeddingCompanion", Context.MODE_PRIVATE)
-        val currentFolder = prefs.getString("current_folder", "wedding day") ?: "wedding day"
+        val currentFolder = prefs.getString("current_folder", "Wedding Day") ?: "Wedding Day"
 
         for (file in files) {
             Log.d("UploadManager", "Found file ${file.name}, uploading to folder '$currentFolder'...")
@@ -95,22 +95,50 @@ object UploadManager {
             outputStream.writeBytes("Content-Disposition: form-data; name=\"photo\"; filename=\"${file.name}\"$lineEnd")
             outputStream.writeBytes("Content-Type: image/jpeg$lineEnd$lineEnd")
 
-            val fileInputStream = FileInputStream(file)
-            var bytesAvailable = fileInputStream.available()
-            var bufferSize = Math.min(bytesAvailable, 1024 * 1024)
-            val buffer = ByteArray(bufferSize)
+            // --- COMPRESSION LOGIC ---
+            val options = android.graphics.BitmapFactory.Options()
+            options.inJustDecodeBounds = true
+            android.graphics.BitmapFactory.decodeFile(file.absolutePath, options)
 
-            var bytesRead = fileInputStream.read(buffer, 0, bufferSize)
-            while (bytesRead > 0) {
-                outputStream.write(buffer, 0, bytesRead)
-                bytesAvailable = fileInputStream.available()
-                bufferSize = Math.min(bytesAvailable, 1024 * 1024)
-                bytesRead = fileInputStream.read(buffer, 0, bufferSize)
+            // Calculate scale (inSampleSize) to prevent OutOfMemory and keep it web-friendly (approx 1920x1080 max)
+            var scale = 1
+            while (options.outWidth / scale / 2 >= 1920 || options.outHeight / scale / 2 >= 1920) {
+                scale *= 2
             }
+
+            options.inJustDecodeBounds = false
+            options.inSampleSize = scale
+            val bitmap = android.graphics.BitmapFactory.decodeFile(file.absolutePath, options)
+
+            if (bitmap != null) {
+                val baos = ByteArrayOutputStream()
+                // Compress to JPEG at 75% quality
+                bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 75, baos)
+                val imageBytes = baos.toByteArray()
+                
+                outputStream.write(imageBytes)
+                bitmap.recycle() // Free memory immediately
+            } else {
+                // Fallback: If decode fails, send raw file (though this might hit Render limits)
+                val fileInputStream = FileInputStream(file)
+                var bytesAvailable = fileInputStream.available()
+                var bufferSize = Math.min(bytesAvailable, 1024 * 1024)
+                val buffer = ByteArray(bufferSize)
+
+                var bytesRead = fileInputStream.read(buffer, 0, bufferSize)
+                while (bytesRead > 0) {
+                    outputStream.write(buffer, 0, bytesRead)
+                    bytesAvailable = fileInputStream.available()
+                    bufferSize = Math.min(bytesAvailable, 1024 * 1024)
+                    bytesRead = fileInputStream.read(buffer, 0, bufferSize)
+                }
+                fileInputStream.close()
+            }
+            // --- END COMPRESSION LOGIC ---
+
             outputStream.writeBytes(lineEnd)
             outputStream.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd)
             
-            fileInputStream.close()
             outputStream.flush()
             outputStream.close()
 
