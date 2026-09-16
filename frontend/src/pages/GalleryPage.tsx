@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, SlidersHorizontal, Grid, LayoutGrid, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import PhotoLightbox from "../components/PhotoLightbox";
 import { API_BASE_URL, WS_BASE_URL, WEDDING_SLUG } from "../config";
 
@@ -152,24 +152,6 @@ export default function GalleryPage() {
               {tab}
             </button>
           ))}
-        </div>
-        
-        <div className="flex items-center gap-3 self-end md:self-auto">
-          <button className="p-2.5 text-foreground hover:bg-secondary rounded-full transition-colors border border-border">
-            <Search className="w-4 h-4" />
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium border border-border hover:bg-secondary rounded-full transition-colors">
-            <SlidersHorizontal className="w-4 h-4" />
-            Sort
-          </button>
-          <div className="flex items-center p-1 bg-secondary rounded-full border border-border">
-            <button className="p-1.5 bg-primary text-primary-foreground rounded-full shadow-sm">
-              <Grid className="w-4 h-4" />
-            </button>
-            <button className="p-1.5 text-muted-foreground hover:text-foreground">
-              <LayoutGrid className="w-4 h-4" />
-            </button>
-          </div>
         </div>
       </div>
       
