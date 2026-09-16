@@ -2,10 +2,13 @@ import { useState, useRef } from "react";
 import { UploadCloud, Image as ImageIcon, CheckCircle, XCircle } from "lucide-react";
 import { API_BASE_URL, WEDDING_SLUG } from "../../config";
 
+import imageCompression from 'browser-image-compression';
+
 export default function ManualUpload() {
   const [activeFolder, setActiveFolder] = useState("Engagement");
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [compressing, setCompressing] = useState(false);
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -29,21 +32,38 @@ export default function ManualUpload() {
   const handleUpload = async () => {
     if (files.length === 0) return;
     setUploading(true);
+    setCompressing(true);
     setStatus("idle");
 
-    const formData = new FormData();
-    formData.append("folder", activeFolder);
-    files.forEach(file => {
-      formData.append("photos", file);
-    });
-
     try {
-      // Fake progress for UI
+      const formData = new FormData();
+      formData.append("folder", activeFolder);
+      
+      const compressionOptions = {
+        maxSizeMB: 1, // Compress down to roughly 1MB
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+      };
+
+      let processed = 0;
+      for (const file of files) {
+        setProgress(Math.floor((processed / files.length) * 40));
+        if (file.type.startsWith('image/')) {
+          const compressedFile = await imageCompression(file, compressionOptions);
+          formData.append("photos", compressedFile, file.name);
+        } else {
+          formData.append("photos", file);
+        }
+        processed++;
+      }
+      
+      setCompressing(false);
+
       const interval = setInterval(() => {
-        setProgress(prev => Math.min(prev + 10, 90));
+        setProgress(prev => Math.min(prev + 5, 90));
       }, 500);
 
-      const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/photos/photographer/upload/`, {
+      const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/photographer/upload/`, {
         method: "POST",
         body: formData,
       });
@@ -61,6 +81,7 @@ export default function ManualUpload() {
       setStatus("error");
     } finally {
       setUploading(false);
+      setCompressing(false);
     }
   };
 
@@ -129,7 +150,7 @@ export default function ManualUpload() {
                 disabled={uploading}
                 className="w-full py-3 bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-400 hover:to-orange-400 text-white font-bold rounded-xl transition-all shadow-[0_0_20px_rgba(244,63,94,0.3)] disabled:opacity-50"
               >
-                {uploading ? `Uploading... ${progress}%` : "Upload to Cloud"}
+                {uploading ? (compressing ? `Compressing Images... ${progress}%` : `Uploading to Server... ${progress}%`) : "Compress & Upload to Cloud"}
               </button>
             </div>
           </div>
