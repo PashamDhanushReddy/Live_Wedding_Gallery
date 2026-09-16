@@ -93,6 +93,24 @@ export default function FindPhotosPage() {
     }
   };
 
+  const [progress, setProgress] = useState(0);
+
+  // Simulated progress animation when in "processing" state
+  useEffect(() => {
+    if (step === "processing") {
+      setProgress(0);
+      const interval = setInterval(() => {
+        setProgress(prev => {
+          if (prev < 30) return prev + Math.floor(Math.random() * 10) + 5;
+          if (prev < 70) return prev + Math.floor(Math.random() * 5) + 2;
+          if (prev < 98) return prev + 1;
+          return 98;
+        });
+      }, 200);
+      return () => clearInterval(interval);
+    }
+  }, [step]);
+
   return (
     <div className="flex flex-col md:flex-row min-h-[calc(100vh-5rem)] bg-background">
       {/* Left side Image - Hidden on mobile results page to save space */}
@@ -224,9 +242,9 @@ export default function FindPhotosPage() {
                   <div className="relative w-24 h-24">
                     <svg className="w-full h-full rotate-[-90deg]" viewBox="0 0 36 36">
                       <path className="text-secondary stroke-current" strokeWidth="3" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                      <path className="text-primary stroke-current animate-[spin_2s_linear_infinite]" strokeWidth="3" strokeDasharray="46, 100" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                      <path className="text-primary stroke-current transition-all duration-300 ease-out" strokeWidth="3" strokeDasharray={`${progress}, 100`} fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                     </svg>
-                    <div className="absolute inset-0 flex items-center justify-center font-medium text-xl">46%</div>
+                    <div className="absolute inset-0 flex items-center justify-center font-medium text-xl">{progress}%</div>
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg text-foreground">Analyzing your selfie</h3>
