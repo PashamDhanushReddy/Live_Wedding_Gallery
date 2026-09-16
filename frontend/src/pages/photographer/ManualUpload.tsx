@@ -36,46 +36,48 @@ export default function ManualUpload() {
     setStatus("idle");
 
     try {
-      const formData = new FormData();
-      formData.append("folder", activeFolder);
-      
       const compressionOptions = {
-        maxSizeMB: 1, // Compress down to roughly 1MB
+        maxSizeMB: 1, 
         maxWidthOrHeight: 1920,
         useWebWorker: true,
       };
 
+      const CHUNK_SIZE = 5; // Upload in batches of 5 to avoid server limits
       let processed = 0;
-      for (const file of files) {
-        setProgress(Math.floor((processed / files.length) * 40));
-        if (file.type.startsWith('image/')) {
-          const compressedFile = await imageCompression(file, compressionOptions);
-          formData.append("photos", compressedFile, file.name);
-        } else {
-          formData.append("photos", file);
+
+      for (let i = 0; i < files.length; i += CHUNK_SIZE) {
+        const chunk = files.slice(i, i + CHUNK_SIZE);
+        const formData = new FormData();
+        formData.append("folder", activeFolder);
+        
+        // Compress chunk
+        for (const file of chunk) {
+          if (file.type.startsWith('image/')) {
+            const compressedFile = await imageCompression(file, compressionOptions);
+            formData.append("photos", compressedFile, file.name);
+          } else {
+            formData.append("photos", file);
+          }
         }
-        processed++;
+        
+        setCompressing(false); // After first chunk compression starts uploading
+
+        // Upload chunk
+        const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/photographer/upload/`, {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!res.ok) {
+          throw new Error("Upload failed for a batch.");
+        }
+        
+        processed += chunk.length;
+        setProgress(Math.floor((processed / files.length) * 100));
       }
-      
-      setCompressing(false);
 
-      const interval = setInterval(() => {
-        setProgress(prev => Math.min(prev + 5, 90));
-      }, 500);
-
-      const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/photographer/upload/`, {
-        method: "POST",
-        body: formData,
-      });
-
-      clearInterval(interval);
-      if (res.ok) {
-        setProgress(100);
-        setStatus("success");
-        setFiles([]);
-      } else {
-        setStatus("error");
-      }
+      setStatus("success");
+      setFiles([]);
     } catch (e) {
       console.error(e);
       setStatus("error");
