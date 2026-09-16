@@ -78,6 +78,22 @@ class WeddingFTPHandler(FTPHandler):
             
             self.broadcast_transfer(wedding.slug, transfer)
 
+            # 0. Optimize the image (Compress & Resize)
+            logger.info(f"Optimizing {filename} before upload...")
+            transfer.progress = 25
+            transfer.save()
+            self.broadcast_transfer(wedding.slug, transfer)
+            
+            try:
+                from PIL import Image, ImageOps
+                if os.path.getsize(file_path) > 1024 * 1024: # Only compress if > 1MB
+                    with Image.open(file_path) as img:
+                        img = ImageOps.exif_transpose(img)
+                        img.thumbnail((1920, 1920), Image.Resampling.LANCZOS)
+                        img.convert('RGB').save(file_path, "JPEG", quality=85, optimize=True)
+            except Exception as e:
+                logger.error(f"Optimization failed (skipping): {e}")
+
             # 1. Upload to Cloudinary
             logger.info(f"Uploading {filename} to Cloudinary folder {connection.active_folder}...")
             transfer.progress = 50
