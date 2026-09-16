@@ -97,16 +97,6 @@ class PhotoSyncView(APIView):
             return Response({"error": str(e)}, status=400)
 
 
-# Global cache for the InsightFace model to prevent slow loading on every request
-_face_app = None
-
-def get_face_app():
-    global _face_app
-    if _face_app is None:
-        from insightface.app import FaceAnalysis
-        _face_app = FaceAnalysis(name='buffalo_l')
-        _face_app.prepare(ctx_id=0, det_size=(640, 640))
-    return _face_app
 
 class FaceSearchView(APIView):
     def post(self, request, slug):
@@ -122,6 +112,7 @@ class FaceSearchView(APIView):
         try:
             import cv2
             import numpy as np
+            from photos.views import get_face_app, _face_lock
             
             # Read image from memory
             file_bytes = np.asarray(bytearray(file_obj.read()), dtype=np.uint8)
@@ -129,7 +120,8 @@ class FaceSearchView(APIView):
             
             app = get_face_app()
             
-            faces = app.get(img)
+            with _face_lock:
+                faces = app.get(img)
             if not faces:
                 return Response({"error": "No faces found in the image."}, status=400)
                 
