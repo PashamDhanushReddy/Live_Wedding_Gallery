@@ -19,7 +19,7 @@ export default function GalleryPage() {
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   
-  const tabs = ["All", "Ceremony", "Reception", "Family", "Friends", "Couple", "Candid"];
+  const tabs = ["All", "Engagement", "Haldi", "Mehendi", "Wedding Day", "Reception", "Uncategorized"];
 
   useEffect(() => {
     // 1. Fetch initial photos
@@ -34,7 +34,7 @@ export default function GalleryPage() {
             url: p.secure_url || p.cloudinary_url || "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=800",
             thumbnail_url: p.thumbnail_url,
             aspect: p.width && p.height ? `aspect-[${p.width}/${p.height}]` : "aspect-square",
-            category: "All" // Placeholder since backend doesn't have categories yet
+            category: p.folder || "Uncategorized"
           }));
           setPhotos(mappedPhotos);
         }
@@ -58,7 +58,7 @@ export default function GalleryPage() {
             url: p.secure_url || p.cloudinary_url || "",
             thumbnail_url: p.thumbnail_url,
             aspect: p.width && p.height ? `aspect-[${p.width}/${p.height}]` : "aspect-square",
-            category: "All"
+            category: p.folder || "Uncategorized"
           }));
           setPhotos(prev => {
             // Only update if count changed (new photos added)
@@ -84,7 +84,7 @@ export default function GalleryPage() {
             url: p.secure_url || p.cloudinary_url,
             thumbnail_url: p.thumbnail_url,
             aspect: p.width && p.height ? `aspect-[${p.width}/${p.height}]` : "aspect-square",
-            category: "All"
+            category: p.folder || "Uncategorized"
           };
           setPhotos((prev) => {
             if (prev.find(x => x.id === newPhoto.id)) return prev;
@@ -105,6 +105,8 @@ export default function GalleryPage() {
     setCurrentPhotoIndex(index);
     setLightboxOpen(true);
   };
+
+  const filteredPhotos = activeTab === "All" ? photos : photos.filter(p => p.category === activeTab);
 
   return (
     <div className="container mx-auto px-4 md:px-8 py-12 max-w-7xl">
@@ -160,13 +162,13 @@ export default function GalleryPage() {
         <div className="flex justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
-      ) : photos.length === 0 ? (
+      ) : filteredPhotos.length === 0 ? (
         <div className="text-center py-20 text-muted-foreground">
-          No photos found for this event yet.
+          No photos found for this category yet.
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {photos.map((photo, index) => (
+          {filteredPhotos.map((photo, index) => (
             <div 
               key={photo.id} 
               onClick={() => openLightbox(index)}
@@ -190,7 +192,7 @@ export default function GalleryPage() {
 
       {lightboxOpen && (
         <PhotoLightbox 
-          photos={photos} 
+          photos={filteredPhotos} 
           initialIndex={currentPhotoIndex} 
           onClose={() => setLightboxOpen(false)} 
         />
