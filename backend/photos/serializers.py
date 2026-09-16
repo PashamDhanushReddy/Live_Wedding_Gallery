@@ -4,7 +4,7 @@ from .models import Photo
 class PhotoSerializer(serializers.ModelSerializer):
     class Meta:
         model = Photo
-        fields = ['id', 'wedding', 'cloudinary_url', 'secure_url', 'width', 'height', 'thumbnail_url', 'processing_status', 'captured_at', 'created_at']
+        fields = ['id', 'wedding', 'cloudinary_url', 'secure_url', 'width', 'height', 'thumbnail_url', 'folder', 'processing_status', 'captured_at', 'created_at']
 
 from .models import CameraConnection, Transfer
 

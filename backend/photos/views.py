@@ -35,6 +35,17 @@ class CameraDisconnectView(APIView):
         CameraConnection.objects.filter(wedding=wedding).update(connection_status='DISCONNECTED')
         return Response({"status": "disconnected"})
 
+class CameraFolderView(APIView):
+    def post(self, request, slug):
+        wedding = get_object_or_404(Wedding, slug=slug, is_active=True)
+        folder = request.data.get('folder', 'Uncategorized')
+        connection = CameraConnection.objects.filter(wedding=wedding).first()
+        if connection:
+            connection.active_folder = folder
+            connection.save()
+            return Response(CameraConnectionSerializer(connection).data)
+        return Response({"error": "No camera connection found"}, status=404)
+
 class TransferListView(generics.ListAPIView):
     serializer_class = TransferSerializer
     

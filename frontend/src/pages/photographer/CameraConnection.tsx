@@ -10,8 +10,28 @@ export default function CameraConnection() {
     username: "camera_sandeep-prathyusha",
     password: "password123", // In real app, generate securely
     remote_directory: "/DCIM/",
-    status: "DISCONNECTED"
+    status: "DISCONNECTED",
+    active_folder: "Uncategorized"
   });
+  const [activeFolder, setActiveFolder] = useState("Uncategorized");
+
+  const updateFolder = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/photographer/camera/folder/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folder: activeFolder })
+      });
+      if (res.ok) {
+        setConnectionData(prev => ({ ...prev, active_folder: activeFolder }));
+        alert(`Active folder set to: ${activeFolder}`);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    setLoading(false);
+  };
 
   const connectCamera = async () => {
     setLoading(true);
@@ -26,7 +46,9 @@ export default function CameraConnection() {
         })
       });
       if (res.ok) {
-        setConnectionData(prev => ({ ...prev, status: "CONNECTED" }));
+        const data = await res.json();
+        setConnectionData(prev => ({ ...prev, status: "CONNECTED", active_folder: data.active_folder || 'Uncategorized' }));
+        setActiveFolder(data.active_folder || 'Uncategorized');
       }
     } catch (e) {
       console.error(e);
@@ -80,10 +102,34 @@ export default function CameraConnection() {
               <label className="text-sm font-medium text-neutral-400">Password</label>
               <input type="text" readOnly value={connectionData.password} className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-rose-500" />
             </div>
-            <div className="space-y-2 md:col-span-2">
-              <label className="text-sm font-medium text-neutral-400">Remote Directory</label>
-              <input type="text" readOnly value={connectionData.remote_directory} className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-white font-mono text-sm focus:outline-none focus:border-rose-500" />
-            </div>
+            
+            {connectionData.status === 'CONNECTED' && (
+              <div className="space-y-2 md:col-span-2 border-t border-neutral-800 pt-6 mt-2">
+                <label className="text-sm font-medium text-neutral-400">Active Photo Folder / Category</label>
+                <div className="flex gap-3">
+                  <select 
+                    value={activeFolder} 
+                    onChange={(e) => setActiveFolder(e.target.value)}
+                    className="flex-1 bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-rose-500"
+                  >
+                    <option value="Uncategorized">Uncategorized</option>
+                    <option value="Haldi">Haldi</option>
+                    <option value="Mehendi">Mehendi</option>
+                    <option value="Engagement">Engagement</option>
+                    <option value="Wedding Day">Wedding Day</option>
+                    <option value="Reception">Reception</option>
+                  </select>
+                  <button 
+                    onClick={updateFolder} 
+                    disabled={loading}
+                    className="px-6 py-3 bg-neutral-800 hover:bg-neutral-700 text-white font-medium rounded-xl transition-all disabled:opacity-50 whitespace-nowrap"
+                  >
+                    Set Active Folder
+                  </button>
+                </div>
+                <p className="text-xs text-neutral-500 mt-2">All new photos uploaded from the camera will be tagged with this category.</p>
+              </div>
+            )}
           </div>
         </div>
 

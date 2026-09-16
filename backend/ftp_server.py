@@ -79,14 +79,14 @@ class WeddingFTPHandler(FTPHandler):
             self.broadcast_transfer(wedding.slug, transfer)
 
             # 1. Upload to Cloudinary
-            logger.info(f"Uploading {filename} to Cloudinary...")
+            logger.info(f"Uploading {filename} to Cloudinary folder {connection.active_folder}...")
             transfer.progress = 50
             transfer.save()
             self.broadcast_transfer(wedding.slug, transfer)
 
             upload_result = cloudinary.uploader.upload(
                 file_path,
-                folder=f"weddings/{wedding.slug}/originals"
+                folder=f"weddings/{wedding.slug}/{connection.active_folder}/originals"
             )
             
             # 2. Save Photo in Django
@@ -100,6 +100,7 @@ class WeddingFTPHandler(FTPHandler):
                 width=upload_result.get('width'),
                 height=upload_result.get('height'),
                 file_size=upload_result.get('bytes'),
+                folder=connection.active_folder,
                 processing_status='PROCESSING', # Need face detection
                 upload_status='COMPLETED',
                 captured_at=timezone.now()

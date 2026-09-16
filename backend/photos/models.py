@@ -22,6 +22,7 @@ class Photo(models.Model):
     processing_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='PENDING')
     upload_status = models.CharField(max_length=20, default='PENDING')
     thumbnail_url = models.URLField(max_length=500, blank=True, null=True)
+    folder = models.CharField(max_length=100, default='Uncategorized')
     checksum = models.CharField(max_length=64, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -43,6 +44,7 @@ class CameraConnection(models.Model):
     port = models.IntegerField(default=21)
     username = models.CharField(max_length=100)
     remote_directory = models.CharField(max_length=255, default='/DCIM/')
+    active_folder = models.CharField(max_length=100, default='Uncategorized')
     connection_status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DISCONNECTED')
     last_connected = models.DateTimeField(null=True, blank=True)
     last_photo_received = models.DateTimeField(null=True, blank=True)
