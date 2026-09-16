@@ -46,9 +46,12 @@ object UploadManager {
             file.isFile && validExtensions.any { ext -> file.name.endsWith(ext, true) }
         } ?: return
 
+        val prefs = context.getSharedPreferences("WeddingCompanion", Context.MODE_PRIVATE)
+        val currentFolder = prefs.getString("current_folder", "wedding day") ?: "wedding day"
+
         for (file in files) {
-            Log.d("UploadManager", "Found file ${file.name}, uploading to Django...")
-            val success = uploadFile(file)
+            Log.d("UploadManager", "Found file ${file.name}, uploading to folder '$currentFolder'...")
+            val success = uploadFile(file, currentFolder)
             if (success) {
                 Log.d("UploadManager", "Upload success! Deleting local file ${file.name}")
                 file.delete()
@@ -58,7 +61,7 @@ object UploadManager {
         }
     }
 
-    private fun uploadFile(file: File): Boolean {
+    private fun uploadFile(file: File, folder: String): Boolean {
         val boundary = "*****"
         val lineEnd = "\r\n"
         val twoHyphens = "--"
@@ -81,8 +84,13 @@ object UploadManager {
             outputStream.writeBytes(twoHyphens + boundary + lineEnd)
             outputStream.writeBytes("Content-Disposition: form-data; name=\"device_id\"$lineEnd$lineEnd")
             outputStream.writeBytes("$DEVICE_ID$lineEnd")
+            
+            // 2. Add folder
+            outputStream.writeBytes(twoHyphens + boundary + lineEnd)
+            outputStream.writeBytes("Content-Disposition: form-data; name=\"folder\"$lineEnd$lineEnd")
+            outputStream.writeBytes("$folder$lineEnd")
 
-            // 2. Add file
+            // 3. Add file
             outputStream.writeBytes(twoHyphens + boundary + lineEnd)
             outputStream.writeBytes("Content-Disposition: form-data; name=\"photo\"; filename=\"${file.name}\"$lineEnd")
             outputStream.writeBytes("Content-Type: image/jpeg$lineEnd$lineEnd")
