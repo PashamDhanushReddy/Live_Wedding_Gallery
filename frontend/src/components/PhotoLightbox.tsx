@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronLeft, ChevronRight, Heart, Download, Share2, Info } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { useState } from "react";
 
 interface Photo {
@@ -119,21 +119,9 @@ export default function PhotoLightbox({ photos, initialIndex, onClose }: PhotoLi
 
         {/* Sidebar / Bottom Actions */}
         <div className="w-full md:w-24 bg-black/80 flex md:flex-col items-center justify-center gap-6 p-4 md:py-12 border-t md:border-t-0 md:border-l border-white/10 absolute bottom-24 md:relative md:bottom-auto z-20">
-          <button className="flex flex-col items-center gap-2 text-white/70 hover:text-primary transition-colors">
-            <Heart className="w-6 h-6" />
-            <span className="text-xs">Like</span>
-          </button>
           <button onClick={handleDownload} className="flex flex-col items-center gap-2 text-white/70 hover:text-white transition-colors">
             <Download className="w-6 h-6" />
             <span className="text-xs">Download</span>
-          </button>
-          <button className="flex flex-col items-center gap-2 text-white/70 hover:text-white transition-colors">
-            <Share2 className="w-6 h-6" />
-            <span className="text-xs">Share</span>
-          </button>
-          <button className="flex flex-col items-center gap-2 text-white/70 hover:text-white transition-colors">
-            <Info className="w-6 h-6" />
-            <span className="text-xs">Details</span>
           </button>
         </div>
         
