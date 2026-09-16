@@ -33,16 +33,18 @@ export default function ManualUpload() {
     if (files.length === 0) return;
     setUploading(true);
     setCompressing(true);
+    setProgress(0);
     setStatus("idle");
+    setErrorMessage("");
 
     try {
       const compressionOptions = {
         maxSizeMB: 1, 
         maxWidthOrHeight: 1920,
-        useWebWorker: true,
+        // useWebWorker removed to prevent browser OOM on massive batch
       };
 
-      const CHUNK_SIZE = 5; // Upload in batches of 5 to avoid server limits
+      const CHUNK_SIZE = 1; // 1 file at a time for maximum safety
       let processed = 0;
 
       for (let i = 0; i < files.length; i += CHUNK_SIZE) {
@@ -53,8 +55,13 @@ export default function ManualUpload() {
         // Compress chunk
         for (const file of chunk) {
           if (file.type.startsWith('image/')) {
-            const compressedFile = await imageCompression(file, compressionOptions);
-            formData.append("photos", compressedFile, file.name);
+            try {
+              const compressedFile = await imageCompression(file, compressionOptions);
+              formData.append("photos", compressedFile, file.name);
+            } catch (ce) {
+              console.warn("Compression failed for", file.name, ce);
+              formData.append("photos", file); // fallback to original if compression fails
+            }
           } else {
             formData.append("photos", file);
           }
@@ -69,7 +76,8 @@ export default function ManualUpload() {
         });
 
         if (!res.ok) {
-          throw new Error("Upload failed for a batch.");
+          const errText = await res.text();
+          throw new Error(`Server returned ${res.status}: ${errText}`);
         }
         
         processed += chunk.length;
@@ -78,8 +86,9 @@ export default function ManualUpload() {
 
       setStatus("success");
       setFiles([]);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      setErrorMessage(e.message || String(e));
       setStatus("error");
     } finally {
       setUploading(false);
@@ -169,11 +178,11 @@ export default function ManualUpload() {
         )}
         
         {status === "error" && (
-          <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center text-red-400">
-            <XCircle className="w-5 h-5 mr-3" />
+          <div className="mt-4 p-4 bg-destructive/10 text-destructive rounded-xl flex gap-3 items-center">
+            <XCircle className="w-5 h-5 flex-shrink-0" />
             <div>
               <p className="font-medium">Upload Failed</p>
-              <p className="text-sm opacity-80">Please check your network and try again.</p>
+              <p className="text-sm">Please check your network and try again. Error: {errorMessage}</p>
             </div>
           </div>
         )}
