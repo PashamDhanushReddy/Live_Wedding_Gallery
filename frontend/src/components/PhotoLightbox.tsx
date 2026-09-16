@@ -99,7 +99,7 @@ export default function PhotoLightbox({ photos, initialIndex, onClose }: PhotoLi
             drag="x"
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.7}
-            onDragEnd={(e, { offset, velocity }) => {
+            onDragEnd={(_, { offset, velocity }) => {
               const swipe = Math.abs(offset.x) * velocity.x;
               if (swipe < -10000) {
                 handleNext();
