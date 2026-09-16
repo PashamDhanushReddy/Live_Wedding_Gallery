@@ -106,6 +106,37 @@ def get_face_app():
                 _face_app.prepare(ctx_id=0, det_size=(640, 640))
     return _face_app
 
+class PhotoDeleteView(APIView):
+    def delete(self, request, slug, pk):
+        try:
+            wedding = get_object_or_404(Wedding, slug=slug, is_active=True)
+            photo = get_object_or_404(Photo, id=pk, wedding=wedding)
+            
+            # Delete from Cloudinary if it exists
+            if photo.cloudinary_public_id:
+                try:
+                    cloudinary.uploader.destroy(photo.cloudinary_public_id)
+                except Exception as e:
+                    print(f"Failed to delete from Cloudinary: {e}")
+                    
+            # Delete from database (this will cascade delete faces)
+            photo.delete()
+            
+            # Broadcast deletion to all connected clients
+            channel_layer = get_channel_layer()
+            async_to_sync(channel_layer.group_send)(
+                f'wedding_{slug}',
+                {
+                    'type': 'delete_photo',
+                    'photo_id': pk
+                }
+            )
+            
+            return Response({"status": "success", "message": "Photo deleted successfully"}, status=200)
+            
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)
+
 # Use a thread pool to prevent OOM when uploading 400 photos
 _upload_executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
 

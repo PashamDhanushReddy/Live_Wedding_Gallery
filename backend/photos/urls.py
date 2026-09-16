@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import CameraConnectView, CameraDisconnectView, CameraFolderView, TransferListView, PhotographerStatsView, ManualUploadView, PhoneAuthView, PhoneSyncView, PhoneUploadView
+from .views import CameraConnectView, CameraDisconnectView, CameraFolderView, TransferListView, PhotographerStatsView, ManualUploadView, PhoneAuthView, PhoneSyncView, PhoneUploadView, PhotoDeleteView
 
 urlpatterns = [
     path('camera/connect/', CameraConnectView.as_view(), name='camera-connect'),
@@ -11,4 +11,5 @@ urlpatterns = [
     path('phone/auth/', PhoneAuthView.as_view(), name='phone-auth'),
     path('phone/sync/', PhoneSyncView.as_view(), name='phone-sync'),
     path('phone/upload/', PhoneUploadView.as_view(), name='phone-upload'),
+    path('<int:pk>/', PhotoDeleteView.as_view(), name='photo-delete'),
 ]

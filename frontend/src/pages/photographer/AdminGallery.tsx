@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Loader2 } from "lucide-react";
-import PhotoLightbox from "../components/PhotoLightbox";
-import { API_BASE_URL, WS_BASE_URL, WEDDING_SLUG } from "../config";
+import { Loader2, Trash2 } from "lucide-react";
+import PhotoLightbox from "../../../components/PhotoLightbox";
+import { API_BASE_URL, WS_BASE_URL, WEDDING_SLUG } from "../../../config";
 
 interface Photo {
   id: number;
@@ -12,7 +12,7 @@ interface Photo {
   category?: string;
 }
 
-export default function GalleryPage() {
+export default function AdminGallery() {
   const [activeTab, setActiveTab] = useState("All");
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
@@ -31,13 +31,11 @@ export default function GalleryPage() {
   ];
 
   useEffect(() => {
-    // 1. Fetch initial photos
     const fetchPhotos = async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/photos/`);
         if (res.ok) {
           const data = await res.json();
-          // Backend returns serializer data. Map it.
           const mappedPhotos = data.map((p: any) => ({
             id: p.id,
             url: p.secure_url || p.cloudinary_url || "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=800",
@@ -56,7 +54,6 @@ export default function GalleryPage() {
 
     fetchPhotos();
 
-    // 2. Polling every 5 seconds for reliable real-time updates
     const pollInterval = setInterval(async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/photos/`);
@@ -69,16 +66,11 @@ export default function GalleryPage() {
             aspect: p.width && p.height ? `aspect-[${p.width}/${p.height}]` : "aspect-square",
             category: p.folder || "Uncategorized"
           }));
-          setPhotos(prev => {
-            // Compare lengths. We can't just check if length changed for deletions,
-            // but it's safe to just set mappedPhotos since it's the source of truth
-            return mappedPhotos;
-          });
+          setPhotos(mappedPhotos);
         }
       } catch (_) {}
     }, 5000);
 
-    // 3. WebSocket for instant push updates (bonus speed)
     let ws: WebSocket | null = null;
     try {
       ws = new WebSocket(`${WS_BASE_URL}/weddings/${WEDDING_SLUG}/`);
@@ -115,36 +107,31 @@ export default function GalleryPage() {
     setLightboxOpen(true);
   };
 
+  const deletePhoto = async (id: number) => {
+    // Optimistic UI update
+    setPhotos(prev => prev.filter(p => p.id !== id));
+    
+    // API Call
+    try {
+      const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/photos/${id}/`, {
+        method: "DELETE"
+      });
+      if (!res.ok) {
+        console.error("Failed to delete photo on backend");
+        // We could theoretically rollback here, but websocket polling will fix it shortly anyway if it failed
+      }
+    } catch (err) {
+      console.error("Delete request failed", err);
+    }
+  };
+
   const filteredPhotos = activeTab === "All" ? photos : photos.filter(p => p.category === activeTab);
 
   return (
-    <div className="container mx-auto px-4 md:px-8 py-12 max-w-7xl">
-      {/* Header section */}
-      <div className="text-center mb-12">
-        <p className="text-xs font-semibold tracking-[0.2em] text-muted-foreground uppercase mb-4">
-          The Wedding Of
-        </p>
-        <h1 className="text-4xl md:text-5xl font-serif text-foreground mb-4">
-          Sandeep Reddy & Prathyusha
-        </h1>
-        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-          <span>November 21, 2026</span>
-          <span className="w-1 h-1 rounded-full bg-border"></span>
-          <span>Hyderabad, Telangana</span>
-        </div>
-        
-        <div className="mt-8 flex items-center justify-center gap-3">
-          <div className="flex items-center gap-2 bg-secondary px-3 py-1 rounded-full text-xs font-medium">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-            </span>
-            LIVE
-          </div>
-          <p className="text-sm">
-            <strong className="text-foreground">{photos.length}</strong> photos and counting...
-          </p>
-        </div>
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight text-white uppercase tracking-wider">Manage Photos</h1>
+        <p className="text-neutral-400 mt-2">View and manage all uploaded photos for the live gallery.</p>
       </div>
       
       {/* Filters and Controls */}
@@ -156,8 +143,8 @@ export default function GalleryPage() {
               onClick={() => setActiveTab(tab)}
               className={`px-5 py-2 rounded-full text-sm whitespace-nowrap transition-colors ${
                 activeTab === tab 
-                  ? "bg-primary text-primary-foreground font-medium" 
-                  : "bg-secondary text-foreground hover:bg-secondary/80"
+                  ? "bg-rose-500 text-white font-medium" 
+                  : "bg-neutral-800 text-neutral-300 hover:bg-neutral-700"
               }`}
             >
               {tab}
@@ -169,10 +156,10 @@ export default function GalleryPage() {
       {/* Masonry Grid */}
       {loading ? (
         <div className="flex justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <Loader2 className="w-8 h-8 animate-spin text-rose-500" />
         </div>
       ) : filteredPhotos.length === 0 ? (
-        <div className="text-center py-20 text-muted-foreground">
+        <div className="text-center py-20 text-neutral-500">
           No photos found for this category yet.
         </div>
       ) : (
@@ -180,19 +167,34 @@ export default function GalleryPage() {
           {filteredPhotos.map((photo, index) => (
             <div 
               key={photo.id} 
-              onClick={() => openLightbox(index)}
-              className="cursor-pointer group relative rounded-xl overflow-hidden shadow-sm"
+              className="group relative rounded-xl overflow-hidden shadow-sm bg-neutral-900 border border-neutral-800"
             >
-              <img 
-                src={photo.thumbnail_url || photo.url} 
-                alt={photo.category} 
-                className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-                style={{ 
-                  aspectRatio: photo.aspect?.replace('aspect-[', '').replace(']', '') || 'auto'
-                }}
-              />
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                <p className="text-white font-medium">View Photo</p>
+              <div 
+                className="cursor-pointer"
+                onClick={() => openLightbox(index)}
+              >
+                <img 
+                  src={photo.thumbnail_url || photo.url} 
+                  alt={photo.category} 
+                  className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
+                  style={{ 
+                    aspectRatio: photo.aspect?.replace('aspect-[', '').replace(']', '') || 'auto'
+                  }}
+                />
+              </div>
+              
+              {/* Overlay with Delete Button */}
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none flex items-start justify-end p-2">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    deletePhoto(photo.id);
+                  }}
+                  className="p-2 bg-rose-500 text-white rounded-full hover:bg-rose-600 transition-colors pointer-events-auto shadow-lg"
+                  title="Delete Photo"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             </div>
           ))}
@@ -204,6 +206,13 @@ export default function GalleryPage() {
           photos={filteredPhotos} 
           initialIndex={currentPhotoIndex} 
           onClose={() => setLightboxOpen(false)} 
+          onDelete={(id) => {
+            deletePhoto(id);
+            // Optionally close the lightbox if they deleted the very last photo?
+            if (filteredPhotos.length <= 1) {
+              setLightboxOpen(false);
+            }
+          }}
         />
       )}
     </div>

@@ -10,6 +10,7 @@ export default function PhotographerLayout() {
     { name: "Camera", path: "/photographer/camera", icon: Camera },
     { name: "Live Transfers", path: "/photographer/transfers", icon: Activity },
     { name: "Manual Upload", path: "/photographer/upload", icon: UploadCloud },
+    { name: "Manage Photos", path: "/photographer/manage", icon: Camera },
   ];
 
   return (

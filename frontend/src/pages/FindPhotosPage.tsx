@@ -34,6 +34,9 @@ export default function FindPhotosPage() {
         if (data.type === 'new_photo') {
           // Silent refresh of matches when a new photo arrives
           handleUploadClick(true);
+        } else if (data.type === 'delete_photo') {
+          // Remove deleted photo from matches
+          setMatchedPhotos(prev => prev.filter(p => p.id !== data.photo_id));
         }
       };
     } catch (_) {}

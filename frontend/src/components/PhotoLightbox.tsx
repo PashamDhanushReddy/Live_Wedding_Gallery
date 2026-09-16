@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Download, Trash2 } from "lucide-react";
 import { useState } from "react";
 
 interface Photo {
@@ -11,9 +11,10 @@ interface PhotoLightboxProps {
   photos: Photo[];
   initialIndex: number;
   onClose: () => void;
+  onDelete?: (id: number) => void;
 }
 
-export default function PhotoLightbox({ photos, initialIndex, onClose }: PhotoLightboxProps) {
+export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete }: PhotoLightboxProps) {
   // Track by ID so that if new photos are prepended, we don't accidentally switch images
   const [currentPhotoId, setCurrentPhotoId] = useState(photos[initialIndex]?.id);
 
@@ -123,6 +124,18 @@ export default function PhotoLightbox({ photos, initialIndex, onClose }: PhotoLi
             <Download className="w-6 h-6" />
             <span className="text-xs">Download</span>
           </button>
+          
+          {onDelete && (
+            <button 
+              onClick={() => {
+                if (currentPhoto) onDelete(currentPhoto.id);
+              }} 
+              className="flex flex-col items-center gap-2 text-rose-500/70 hover:text-rose-500 transition-colors"
+            >
+              <Trash2 className="w-6 h-6" />
+              <span className="text-xs">Delete</span>
+            </button>
+          )}
         </div>
         
         {/* Carousel Strip (Bottom) */}
