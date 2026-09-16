@@ -112,8 +112,8 @@ object UploadManager {
 
             if (bitmap != null) {
                 val baos = ByteArrayOutputStream()
-                // Compress to JPEG at 75% quality
-                bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 75, baos)
+                // Compress to JPEG at 90% quality for maximum web clarity
+                bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, baos)
                 val imageBytes = baos.toByteArray()
                 
                 outputStream.write(imageBytes)
