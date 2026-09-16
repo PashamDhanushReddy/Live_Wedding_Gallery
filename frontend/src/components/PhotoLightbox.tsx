@@ -32,6 +32,26 @@ export default function PhotoLightbox({ photos, initialIndex, onClose }: PhotoLi
     setCurrentPhotoId(photos[prevIndex].id);
   };
 
+  const handleDownload = async () => {
+    if (!currentPhoto?.url) return;
+    try {
+      const response = await fetch(currentPhoto.url);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      const filename = currentPhoto.url.split('/').pop()?.split('?')[0] || `wedding-photo-${currentPhoto.id}.jpg`;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (e) {
+      console.error("Download failed", e);
+      window.open(currentPhoto.url, '_blank');
+    }
+  };
+
   return (
     <AnimatePresence>
       <motion.div
@@ -60,7 +80,7 @@ export default function PhotoLightbox({ photos, initialIndex, onClose }: PhotoLi
         </div>
 
         {/* Main Image Area */}
-        <div className="flex-1 relative flex items-center justify-center p-4 md:p-12">
+        <div className="flex-1 relative flex items-center justify-center p-4 md:p-12 mb-24 md:mb-0">
           <button 
             onClick={handlePrev}
             className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-black/50 text-white rounded-full hover:bg-black/80 z-10"
@@ -75,7 +95,7 @@ export default function PhotoLightbox({ photos, initialIndex, onClose }: PhotoLi
             transition={{ duration: 0.2 }}
             src={currentPhoto?.url}
             alt="Wedding Photo"
-            className="max-w-full max-h-[70vh] md:max-h-[85vh] object-contain rounded-md"
+            className="max-w-full max-h-[60vh] md:max-h-[85vh] object-contain rounded-md"
           />
           
           <button 
@@ -87,12 +107,12 @@ export default function PhotoLightbox({ photos, initialIndex, onClose }: PhotoLi
         </div>
 
         {/* Sidebar / Bottom Actions */}
-        <div className="w-full md:w-24 bg-black/80 flex md:flex-col items-center justify-center gap-6 p-4 md:py-12 border-t md:border-t-0 md:border-l border-white/10">
+        <div className="w-full md:w-24 bg-black/80 flex md:flex-col items-center justify-center gap-6 p-4 md:py-12 border-t md:border-t-0 md:border-l border-white/10 absolute bottom-24 md:relative md:bottom-auto z-20">
           <button className="flex flex-col items-center gap-2 text-white/70 hover:text-primary transition-colors">
             <Heart className="w-6 h-6" />
             <span className="text-xs">Like</span>
           </button>
-          <button className="flex flex-col items-center gap-2 text-white/70 hover:text-white transition-colors">
+          <button onClick={handleDownload} className="flex flex-col items-center gap-2 text-white/70 hover:text-white transition-colors">
             <Download className="w-6 h-6" />
             <span className="text-xs">Download</span>
           </button>
