@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Heart, Menu, Search } from "lucide-react";
+import { Heart, Menu, Search, Camera } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -40,6 +40,9 @@ export default function Header() {
 
         {/* Desktop Actions */}
         <div className="hidden md:flex items-center gap-4">
+          <Link to="/photographer" className="p-2 text-muted-foreground hover:text-foreground transition-colors" title="Photographer Portal">
+            <Camera className="w-5 h-5" />
+          </Link>
           <button className="p-2 text-muted-foreground hover:text-foreground transition-colors">
             <Search className="w-5 h-5" />
           </button>
@@ -105,6 +108,13 @@ export default function Header() {
                   className="bg-primary text-primary-foreground px-6 py-2 rounded-full text-sm font-medium"
                 >
                   Find My Photos
+                </Link>
+                <Link
+                  to="/photographer"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2 ml-2 text-muted-foreground hover:text-foreground"
+                >
+                  <Camera className="w-5 h-5" />
                 </Link>
               </div>
             </nav>
