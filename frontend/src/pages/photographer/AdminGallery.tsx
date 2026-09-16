@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Loader2, Trash2 } from "lucide-react";
-import PhotoLightbox from "../../../components/PhotoLightbox";
-import { API_BASE_URL, WS_BASE_URL, WEDDING_SLUG } from "../../../config";
+import PhotoLightbox from "../../components/PhotoLightbox";
+import { API_BASE_URL, WS_BASE_URL, WEDDING_SLUG } from "../../config";
 
 interface Photo {
   id: number;
