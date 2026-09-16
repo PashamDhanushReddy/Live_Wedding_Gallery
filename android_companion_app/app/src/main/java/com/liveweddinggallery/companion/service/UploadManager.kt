@@ -66,8 +66,8 @@ object UploadManager {
         try {
             val url = URL("$DJANGO_API_URL/upload/")
             val connection = url.openConnection() as HttpURLConnection
-            connection.connectTimeout = 5000 // 5 seconds timeout
-            connection.readTimeout = 5000
+            connection.connectTimeout = 10000 // 10 seconds timeout for connection
+            connection.readTimeout = 30000 // 30 seconds timeout for face processing
             connection.doInput = true
             connection.doOutput = true
             connection.useCaches = false
