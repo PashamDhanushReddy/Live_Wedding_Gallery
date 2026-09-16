@@ -108,7 +108,7 @@ export default function PhotoLightbox({ photos, initialIndex, onClose }: PhotoLi
         
         {/* Carousel Strip (Bottom) */}
         <div className="absolute bottom-0 left-0 right-0 md:right-24 h-24 bg-black/80 p-2 flex gap-2 overflow-x-auto hide-scrollbar items-center border-t border-white/10">
-          {photos.map((p, idx) => (
+          {photos.map((p) => (
             <button 
               key={p.id}
               onClick={() => setCurrentPhotoId(p.id)}

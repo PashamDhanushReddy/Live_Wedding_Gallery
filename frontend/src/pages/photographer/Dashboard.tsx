@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Camera, Image as ImageIcon, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Camera, Image as ImageIcon, AlertTriangle } from "lucide-react";
 import { API_BASE_URL, WEDDING_SLUG } from "../../config";
 
 export default function PhotographerDashboard() {

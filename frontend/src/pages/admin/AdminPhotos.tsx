@@ -1,4 +1,4 @@
-import { Search, SlidersHorizontal, Grid, List, CheckCircle2, AlertCircle, Clock, UploadCloud, ChevronDown, MoreVertical } from "lucide-react";
+import { Search, Grid, List, CheckCircle2, AlertCircle, Clock, UploadCloud, ChevronDown, MoreVertical, Eye, Image as ImageIcon } from "lucide-react";
 import { useState } from "react";
 
 const mockPhotos = [

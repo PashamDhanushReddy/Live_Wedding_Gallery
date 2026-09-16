@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Camera, Radio, Activity, LayoutDashboard, LogOut } from "lucide-react";
+import { Camera, Activity, LayoutDashboard, LogOut } from "lucide-react";
 import clsx from "clsx";
 
 export default function PhotographerLayout() {

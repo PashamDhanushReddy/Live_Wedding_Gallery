@@ -1,4 +1,4 @@
-import { ImageIcon, Cloud, ScanFace, Eye, TrendingUp, CheckCircle2, Loader2, AlertCircle } from "lucide-react";
+import { ImageIcon, Cloud, ScanFace, Eye, TrendingUp, AlertCircle } from "lucide-react";
 
 export default function AdminDashboard() {
   return (

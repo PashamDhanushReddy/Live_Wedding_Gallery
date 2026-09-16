@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Server, Wifi, Camera } from "lucide-react";
+import { useState } from "react";
+import { Server, Wifi } from "lucide-react";
 import { API_BASE_URL, WEDDING_SLUG } from "../../config";
 
 export default function CameraConnection() {

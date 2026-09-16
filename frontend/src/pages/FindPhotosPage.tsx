@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { UploadCloud, Upload, Camera, Lock, Eye, CheckCircle2, ScanFace, ImageIcon, Sparkles } from "lucide-react";
+import { useState, useEffect } from "react";
+import { UploadCloud, Upload, Camera, Lock, Eye, ScanFace } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 
@@ -168,7 +168,7 @@ export default function FindPhotosPage() {
                       )}
 
                       <button 
-                        onClick={handleUploadClick}
+                        onClick={() => handleUploadClick(false)}
                         disabled={!selectedFile}
                         className="mt-6 bg-primary text-primary-foreground px-8 py-3 rounded-full font-medium hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed relative z-20"
                       >
