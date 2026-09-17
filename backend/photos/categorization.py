@@ -31,14 +31,27 @@ def categorize_photo(photo):
     has_bride = False
     has_groom = False
     
-    # Threshold for matching a face (lower is stricter, usually 0.4 to 0.6 for insightface)
-    THRESHOLD = 0.5
+    # Threshold for matching a face (lower is stricter)
+    THRESHOLD = 0.45
     
-    # Check all faces in the photo
     faces = photo.faces.all()
-    total_faces = len(faces)
     
-    for face in faces:
+    # Calculate a proxy for face size to filter out small background faces
+    # Assuming a typical photo, faces > 100x100 pixels are prominent, or just take the top 2-3 largest faces.
+    # Let's sort faces by size (width * height) descending.
+    sorted_faces = sorted(faces, key=lambda f: f.width * f.height, reverse=True)
+    
+    # A prominent face is one that is at least 15% the size of the largest face in the photo,
+    # or just rely on a strict count of the top 5 largest faces to avoid tiny background blurs.
+    prominent_faces = []
+    if sorted_faces:
+        max_area = sorted_faces[0].width * sorted_faces[0].height
+        prominent_faces = [f for f in sorted_faces if (f.width * f.height) >= max_area * 0.15]
+    
+    total_prominent = len(prominent_faces)
+    
+    # We only check matches against the prominent faces
+    for face in prominent_faces:
         embedding = face.embedding
         if not embedding:
             continue
@@ -53,13 +66,13 @@ def categorize_photo(photo):
             if dist_groom < THRESHOLD:
                 has_groom = True
                 
-    # Determine the folder based on matches and exact face counts
+    # Determine the folder based on matches and PROMINENT face counts
     new_folder = None
-    if has_bride and has_groom and total_faces == 2:
+    if has_bride and has_groom and total_prominent == 2:
         new_folder = "Bride and Groom"
-    elif has_bride and not has_groom and total_faces == 1:
+    elif has_bride and not has_groom and total_prominent == 1:
         new_folder = "Bride"
-    elif has_groom and not has_bride and total_faces == 1:
+    elif has_groom and not has_bride and total_prominent == 1:
         new_folder = "Groom"
         
     if new_folder and photo.folder != new_folder:
