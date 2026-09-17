@@ -118,7 +118,13 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
       {createPortal(
         <>
           {/* Custom Native-Scrollable Thumbnails Bar */}
-          <div className="fixed bottom-0 left-0 right-0 h-24 bg-black/80 p-2 flex gap-2 overflow-x-auto hide-scrollbar items-center border-t border-white/10 scroll-smooth z-[99999] pointer-events-auto">
+          <div 
+            className="fixed bottom-0 left-0 right-0 h-24 bg-black/80 p-2 flex gap-2 overflow-x-auto hide-scrollbar items-center border-t border-white/10 scroll-smooth z-[99999] pointer-events-auto"
+            onPointerDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            onWheel={(e) => e.stopPropagation()}
+          >
             {photos.map((p, idx) => (
               <button 
                 key={p.id}
