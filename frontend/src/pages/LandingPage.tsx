@@ -98,17 +98,6 @@ export default function LandingPage() {
 
       </div>
 
-      {/* Couple Image at Bottom Center */}
-      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-[90%] md:w-[60%] lg:w-[45%] max-w-2xl pointer-events-none z-0">
-        <img 
-          src={coupleImage} 
-          alt="Sandeep and Prathyusha" 
-          className="w-full h-auto object-contain object-bottom drop-shadow-2xl opacity-90"
-        />
-        {/* Soft fade at the bottom to blend with the page edge */}
-        <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-[#faf7f5] to-transparent"></div>
-      </div>
-
     </div>
   );
 }
