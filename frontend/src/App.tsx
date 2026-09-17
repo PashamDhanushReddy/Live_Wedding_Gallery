@@ -4,6 +4,8 @@ import AppLayout from "./components/layout/AppLayout";
 import LandingPage from "./pages/LandingPage";
 import GalleryPage from "./pages/GalleryPage";
 import FindPhotosPage from "./pages/FindPhotosPage";
+import AboutPage from "./pages/AboutPage";
+import SharePage from "./pages/SharePage";
 import AdminLayout from "./components/layout/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPhotos from "./pages/admin/AdminPhotos";
@@ -26,6 +28,8 @@ function App() {
           <Route index element={<LandingPage />} />
           <Route path="photos" element={<GalleryPage />} />
           <Route path="find" element={<FindPhotosPage />} />
+          <Route path="about" element={<AboutPage />} />
+          <Route path="share" element={<SharePage />} />
         </Route>
         
         {/* Photographer Portal */}
