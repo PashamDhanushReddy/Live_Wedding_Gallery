@@ -54,6 +54,13 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
     }
   };
 
+  useEffect(() => {
+    const el = document.getElementById(`thumb-${activeIndex}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  }, [activeIndex]);
+
   return (
     <AnimatePresence>
       <motion.div
@@ -147,14 +154,15 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
         </div>
         
         {/* Carousel Strip (Bottom) */}
-        <div className="absolute bottom-0 left-0 right-0 md:right-24 h-24 bg-black/80 p-2 flex gap-2 overflow-x-auto hide-scrollbar items-center border-t border-white/10">
+        <div className="absolute bottom-0 left-0 right-0 md:right-24 h-24 bg-black/80 p-2 flex gap-2 overflow-x-auto hide-scrollbar items-center border-t border-white/10 scroll-smooth">
           {photos.map((p, idx) => (
             <button 
               key={p.id}
+              id={`thumb-${idx}`}
               onClick={() => swiperRef.current?.slideTo(idx)}
               className={`flex-shrink-0 h-16 w-16 md:h-20 md:w-20 rounded-md overflow-hidden border-2 transition-all ${idx === activeIndex ? 'border-primary' : 'border-transparent opacity-50 hover:opacity-100'}`}
             >
-              <img src={p.url} className="w-full h-full object-cover" />
+              <img src={p.url} loading="lazy" className="w-full h-full object-cover" />
             </button>
           ))}
         </div>
