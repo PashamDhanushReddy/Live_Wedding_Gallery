@@ -63,6 +63,37 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
     }
   };
 
+  // Memoize the Swiper component to prevent React from re-rendering all 100+ slides
+  // every time the activeIndex state changes, which causes massive stuttering during swipes.
+  const memoizedSwiper = React.useMemo(() => (
+    <Swiper
+      modules={[Zoom]}
+      zoom={true}
+      spaceBetween={20}
+      slidesPerView={1}
+      initialSlide={initialIndex}
+      onSwiper={(swiper) => (swiperRef.current = swiper)}
+      onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
+      onSlideChangeTransitionEnd={handleSlideTransitionEnd}
+      className="w-full h-full"
+    >
+      {photos.map((photo) => (
+        <SwiperSlide key={photo.id}>
+          <div className="swiper-zoom-container w-full h-full p-4 md:p-12 pb-24 md:pb-12">
+            <img 
+              src={photo.url} 
+              alt="Wedding Photo" 
+              loading="lazy"
+              className="max-w-full max-h-[70vh] md:max-h-[85vh] object-contain rounded-md"
+              style={{ transform: 'translateZ(0)', backfaceVisibility: 'hidden' }}
+            />
+            <div className="swiper-lazy-preloader"></div>
+          </div>
+        </SwiperSlide>
+      ))}
+    </Swiper>
+  ), [photos, initialIndex]);
+
   return (
     <AnimatePresence>
       <motion.div
@@ -101,30 +132,7 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
             <ChevronLeft className="w-6 h-6" />
           </button>
 
-          <Swiper
-            modules={[Zoom]}
-            zoom={true}
-            spaceBetween={20}
-            slidesPerView={1}
-            initialSlide={initialIndex}
-            onSwiper={(swiper) => (swiperRef.current = swiper)}
-            onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
-            onSlideChangeTransitionEnd={handleSlideTransitionEnd}
-            className="w-full h-full"
-          >
-            {photos.map((photo) => (
-              <SwiperSlide key={photo.id}>
-                <div className="swiper-zoom-container w-full h-full p-4 md:p-12 pb-24 md:pb-12">
-                  <img 
-                    src={photo.url} 
-                    alt="Wedding Photo" 
-                    loading="lazy"
-                    className="max-w-full max-h-[70vh] md:max-h-[85vh] object-contain rounded-md"
-                  />
-                </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
+          {memoizedSwiper}
           
           <button 
             onClick={handleNext}
