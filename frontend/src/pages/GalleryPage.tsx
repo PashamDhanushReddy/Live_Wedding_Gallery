@@ -126,10 +126,16 @@ export default function GalleryPage() {
       {/* Header Wrapper with Restricted Background */}
       <div className="relative w-full z-10 pt-16 md:pt-24 pb-4">
         
-        {/* User's Exact Floral Background Image */}
+        {/* User's Exact Floral Background Image for Desktop */}
         <div 
-          className="absolute inset-0 w-full h-full bg-no-repeat bg-[length:100%_100%] opacity-50 -z-10 pointer-events-none [mask-image:linear-gradient(to_bottom,white_80%,transparent_100%)]"
+          className="absolute inset-0 w-full h-full bg-no-repeat bg-[length:100%_100%] opacity-50 -z-10 pointer-events-none [mask-image:linear-gradient(to_bottom,white_80%,transparent_100%)] hidden md:block"
           style={{ backgroundImage: `url(${bgImage})` }}
+        ></div>
+
+        {/* User's Exact Floral Background Image for Mobile */}
+        <div 
+          className="absolute inset-0 w-full h-full bg-no-repeat bg-[length:100%_100%] opacity-50 -z-10 pointer-events-none [mask-image:linear-gradient(to_bottom,white_80%,transparent_100%)] block md:hidden"
+          style={{ backgroundImage: `url(/mobile_bg.png)` }}
         ></div>
 
         <div className="container mx-auto px-4 md:px-8 max-w-7xl">

@@ -2,14 +2,21 @@ import { Link } from "react-router-dom";
 import { Camera, Image as ImageIcon, Calendar, MapPin } from "lucide-react";
 import coupleImage from "../assets/couple.png";
 import bgImage from "../assets/bg_blue.png";
+import mobileBg from "../../public/mobile_bg.png"; // Or just "/mobile_bg.png" in styles
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#faf7f5]">
-      {/* Background with floral top/bottom */}
+      {/* Background for Desktop */}
       <div 
-        className="absolute inset-0 w-full h-full bg-no-repeat bg-[length:100%_100%] opacity-40 z-0 pointer-events-none"
+        className="absolute inset-0 w-full h-full bg-no-repeat bg-[length:100%_100%] opacity-40 z-0 pointer-events-none hidden md:block"
         style={{ backgroundImage: `url(${bgImage})` }}
+      ></div>
+
+      {/* Background for Mobile */}
+      <div 
+        className="absolute inset-0 w-full h-full bg-no-repeat bg-[length:100%_100%] opacity-40 z-0 pointer-events-none block md:hidden"
+        style={{ backgroundImage: `url(/mobile_bg.png)` }}
       ></div>
 
       <div className="relative z-10 container mx-auto px-6 pt-12 md:pt-16 pb-16 min-h-[90vh] flex flex-col items-center justify-start text-center">
