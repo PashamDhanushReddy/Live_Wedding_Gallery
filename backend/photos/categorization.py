@@ -35,7 +35,10 @@ def categorize_photo(photo):
     THRESHOLD = 0.5
     
     # Check all faces in the photo
-    for face in photo.faces.all():
+    faces = photo.faces.all()
+    total_faces = len(faces)
+    
+    for face in faces:
         embedding = face.embedding
         if not embedding:
             continue
@@ -50,13 +53,13 @@ def categorize_photo(photo):
             if dist_groom < THRESHOLD:
                 has_groom = True
                 
-    # Determine the folder based on matches
+    # Determine the folder based on matches and exact face counts
     new_folder = None
-    if has_bride and has_groom:
+    if has_bride and has_groom and total_faces == 2:
         new_folder = "Bride and Groom"
-    elif has_bride:
+    elif has_bride and not has_groom and total_faces == 1:
         new_folder = "Bride"
-    elif has_groom:
+    elif has_groom and not has_bride and total_faces == 1:
         new_folder = "Groom"
         
     if new_folder and photo.folder != new_folder:
