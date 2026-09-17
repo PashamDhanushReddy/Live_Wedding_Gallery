@@ -13,6 +13,7 @@ interface Photo {
 }
 
 import bgImage from "../assets/bg_blue.png";
+import mobileBg from "../assets/mobile_bg.png";
 
 export default function GalleryPage() {
   const [activeTab, setActiveTab] = useState("All");
@@ -135,7 +136,7 @@ export default function GalleryPage() {
         {/* User's Exact Floral Background Image for Mobile */}
         <div 
           className="absolute inset-0 w-full h-full bg-no-repeat bg-[length:100%_100%] opacity-50 -z-10 pointer-events-none [mask-image:linear-gradient(to_bottom,white_80%,transparent_100%)] block md:hidden"
-          style={{ backgroundImage: `url(/mobile_bg.png)` }}
+          style={{ backgroundImage: `url(${mobileBg})` }}
         ></div>
 
         <div className="container mx-auto px-4 md:px-8 max-w-7xl">
