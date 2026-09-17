@@ -137,6 +137,10 @@ class WeddingFTPHandler(FTPHandler):
             # In a real app this would be a Celery task. For prototype, do it synchronously or background thread.
             self.extract_faces(photo, file_path)
             
+            # 4. Categorize Photo based on extracted faces
+            from photos.categorization import categorize_photo
+            categorize_photo(photo)
+            
             # Broadcast new photo
             photo.processing_status = 'COMPLETED'
             photo.save()
