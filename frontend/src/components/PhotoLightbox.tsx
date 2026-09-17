@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, Download, Trash2 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Zoom } from 'swiper/modules';
+import { Zoom, Virtual } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
 
 import 'swiper/css';
@@ -93,8 +93,9 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
           </button>
 
           <Swiper
-            modules={[Zoom]}
+            modules={[Zoom, Virtual]}
             zoom={true}
+            virtual={{ enabled: true, addSlidesBefore: 2, addSlidesAfter: 2 }}
             spaceBetween={20}
             slidesPerView={1}
             initialSlide={initialIndex}
@@ -102,13 +103,15 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
             onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
             className="w-full h-full"
           >
-            {photos.map((photo) => (
-              <SwiperSlide key={photo.id}>
+            {photos.map((photo, index) => (
+              <SwiperSlide key={photo.id} virtualIndex={index}>
                 <div className="swiper-zoom-container w-full h-full p-4 md:p-12 pb-24 md:pb-12">
                   <img 
                     src={photo.url} 
                     alt="Wedding Photo" 
+                    loading="lazy"
                     className="max-w-full max-h-[70vh] md:max-h-[85vh] object-contain rounded-md"
+                    style={{ transform: 'translateZ(0)' }}
                   />
                 </div>
               </SwiperSlide>
