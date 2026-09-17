@@ -32,8 +32,9 @@ import concurrent.futures
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ftp_server")
 
-# Limit concurrent processing to prevent OOM errors when bursts of photos arrive
-executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
+# Limit concurrent processing to 1 to guarantee thread-safety for SQLite/ONNX 
+# and absolutely prevent OOM errors when bursts of photos arrive.
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 # Initialize InsightFace model globally
 from insightface.app import FaceAnalysis
@@ -176,6 +177,14 @@ class WeddingFTPHandler(FTPHandler):
                 transfer.error_message = str(e)
                 transfer.save()
                 self.broadcast_transfer(wedding.slug, transfer)
+            
+            # Ensure the local file is cleaned up even if processing fails!
+            # Otherwise it stays locked and blocks future uploads of the same filename.
+            try:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+            except:
+                pass
 
     def broadcast_transfer(self, slug, transfer):
         channel_layer = get_channel_layer()
