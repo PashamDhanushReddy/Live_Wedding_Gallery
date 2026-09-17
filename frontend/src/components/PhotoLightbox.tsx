@@ -1,4 +1,4 @@
-  import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import Lightbox from "yet-another-react-lightbox";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
@@ -20,6 +20,7 @@ interface PhotoLightboxProps {
 
 export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete }: PhotoLightboxProps) {
   const [index, setIndex] = useState(initialIndex);
+  const thumbBarRef = useRef<HTMLDivElement>(null);
 
   const handleDownload = async () => {
     const currentPhoto = photos[index];
@@ -55,6 +56,29 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
       el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     }
   }, [index]);
+
+  // Prevent thumbnail scrolling from triggering main image swipe natively
+  useEffect(() => {
+    const el = thumbBarRef.current;
+    if (!el) return;
+    const stopProp = (e: Event) => e.stopPropagation();
+    
+    el.addEventListener('touchstart', stopProp, { passive: false });
+    el.addEventListener('touchmove', stopProp, { passive: false });
+    el.addEventListener('touchend', stopProp, { passive: false });
+    el.addEventListener('pointerdown', stopProp);
+    el.addEventListener('pointermove', stopProp);
+    el.addEventListener('wheel', stopProp);
+
+    return () => {
+      el.removeEventListener('touchstart', stopProp);
+      el.removeEventListener('touchmove', stopProp);
+      el.removeEventListener('touchend', stopProp);
+      el.removeEventListener('pointerdown', stopProp);
+      el.removeEventListener('pointermove', stopProp);
+      el.removeEventListener('wheel', stopProp);
+    };
+  }, []);
 
   return (
     <>
@@ -119,11 +143,8 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
         <>
           {/* Custom Native-Scrollable Thumbnails Bar */}
           <div 
+            ref={thumbBarRef}
             className="fixed bottom-0 left-0 right-0 h-24 bg-black/80 p-2 flex gap-2 overflow-x-auto hide-scrollbar items-center border-t border-white/10 scroll-smooth z-[99999] pointer-events-auto"
-            onPointerDown={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
-            onTouchMove={(e) => e.stopPropagation()}
-            onWheel={(e) => e.stopPropagation()}
           >
             {photos.map((p, idx) => (
               <button 
