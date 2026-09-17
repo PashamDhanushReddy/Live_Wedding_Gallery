@@ -27,9 +27,13 @@ import threading
 import uuid
 import datetime
 from django.utils import timezone
+import concurrent.futures
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("ftp_server")
+
+# Limit concurrent processing to prevent OOM errors when bursts of photos arrive
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
 
 # Load environment
 load_dotenv(BASE_DIR.parent / '.env')
@@ -59,8 +63,8 @@ class WeddingFTPHandler(FTPHandler):
     
     def on_file_received(self, file_path):
         logger.info(f"Received file: {file_path}")
-        # Run processing in a thread so we don't block FTP
-        threading.Thread(target=self.process_photo, args=(self.username, file_path)).start()
+        # Submit to thread pool instead of spawning infinite threads
+        executor.submit(self.process_photo, self.username, file_path)
 
     def process_photo(self, username, file_path):
         try:
