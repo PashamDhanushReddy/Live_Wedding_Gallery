@@ -124,7 +124,7 @@ export default function GalleryPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#fffaf7] to-[#fcfaf8] pb-12">
       {/* Header Wrapper with Restricted Background */}
-      <div className="relative w-full z-10 pt-16 md:pt-24 pb-8">
+      <div className="relative w-full z-10 pt-16 md:pt-24 pb-4">
         
         {/* User's Exact Floral Background Image */}
         <div 
@@ -189,11 +189,11 @@ export default function GalleryPage() {
       </div>
       
       {/* Main Container below Header */}
-      <div className="container mx-auto px-4 md:px-8 max-w-7xl relative z-10 pt-4">
+      <div className="container mx-auto px-4 md:px-8 max-w-7xl relative z-10 pt-0">
       
       {/* Filters and Controls */}
-      <div className="flex justify-center mb-10 w-full">
-        <div className="flex overflow-x-auto pb-4 hide-scrollbar gap-3 px-4 max-w-full">
+      <div className="flex justify-center mb-4 w-full">
+        <div className="flex overflow-x-auto pb-2 hide-scrollbar gap-2 px-4 max-w-full">
           {tabs.map((tab) => {
              let Icon = null;
              if (tab === "All") Icon = Grid;
@@ -205,7 +205,7 @@ export default function GalleryPage() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`flex items-center gap-2.5 px-6 py-3.5 rounded-full text-sm font-medium whitespace-nowrap transition-all duration-300 shadow-sm border ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-[11px] md:text-xs font-medium whitespace-nowrap transition-all duration-300 shadow-sm border ${
                   activeTab === tab 
                     ? "bg-[#a67272] text-white border-[#a67272]" 
                     : "bg-[#fcf5f1] text-[#554c4c] border-[#f0e4dc] hover:bg-[#f4ebe6]"
