@@ -103,17 +103,20 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
       
       {createPortal(
         <>
-          {/* Custom Top Header with Back Button and Counter */}
-          <div className="fixed top-0 left-0 right-0 p-4 z-[99999] pointer-events-none flex items-center">
+          {/* Custom Back Button */}
+          <div className="fixed top-4 left-4 z-[99999]">
             <button 
-              onClick={onClose}
-              className="flex items-center gap-1 text-white/70 hover:text-white pointer-events-auto p-2"
+              onClick={(e) => { e.stopPropagation(); onClose(); }}
+              className="flex items-center gap-1 text-white hover:text-white p-2 bg-black/40 hover:bg-black/60 rounded-lg transition-colors"
             >
               <ChevronLeft className="w-6 h-6" />
               <span className="hidden md:inline font-medium">Back to Gallery</span>
             </button>
-            
-            <div className="text-white/70 text-sm font-medium ml-4 bg-black/40 px-3 py-1 rounded-full">
+          </div>
+          
+          {/* Custom Counter */}
+          <div className="fixed top-4 left-16 md:left-48 ml-2 md:ml-4 z-[99999]">
+            <div className="text-white/90 text-sm font-medium bg-black/40 px-3 py-2 rounded-full flex items-center justify-center">
               {index + 1} / {photos.length}
             </div>
           </div>
