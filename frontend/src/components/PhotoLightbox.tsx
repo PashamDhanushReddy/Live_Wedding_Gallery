@@ -103,8 +103,8 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
       
       {createPortal(
         <>
-          {/* Custom Top Header with Back Button and Centered Counter */}
-          <div className="fixed top-0 left-0 right-0 p-4 z-[99999] pointer-events-none flex items-center justify-between">
+          {/* Custom Top Header with Back Button and Counter */}
+          <div className="fixed top-0 left-0 right-0 p-4 z-[99999] pointer-events-none flex items-center">
             <button 
               onClick={onClose}
               className="flex items-center gap-1 text-white/70 hover:text-white pointer-events-auto p-2"
@@ -113,12 +113,9 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
               <span className="hidden md:inline font-medium">Back to Gallery</span>
             </button>
             
-            <div className="text-white/70 text-sm font-medium absolute left-1/2 -translate-x-1/2">
+            <div className="text-white/70 text-sm font-medium ml-4 bg-black/40 px-3 py-1 rounded-full">
               {index + 1} / {photos.length}
             </div>
-            
-            {/* Spacer for flex layout to not overlap with YARL's top-right toolbar */}
-            <div className="w-24"></div>
           </div>
 
           {/* Custom Native-Scrollable Thumbnails Bar */}
