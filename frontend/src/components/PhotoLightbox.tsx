@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+  import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Lightbox from "yet-another-react-lightbox";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
 import Counter from "yet-another-react-lightbox/plugins/counter";
@@ -102,30 +103,35 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
         }}
       />
       
-      {/* Custom Back Button overlay mimicking the top-left one */}
-      <div className="fixed top-0 left-0 p-4 z-[9999] pointer-events-none flex items-center">
-        <button 
-          onClick={onClose}
-          className="flex items-center gap-1 text-white/70 hover:text-white pointer-events-auto p-2"
-        >
-          <ChevronLeft className="w-6 h-6" />
-          <span className="hidden md:inline font-medium">Back to Gallery</span>
-        </button>
-      </div>
+      {createPortal(
+        <>
+          {/* Custom Back Button overlay mimicking the top-left one */}
+          <div className="fixed top-0 left-0 p-4 z-[99999] pointer-events-none flex items-center">
+            <button 
+              onClick={onClose}
+              className="flex items-center gap-1 text-white/70 hover:text-white pointer-events-auto p-2"
+            >
+              <ChevronLeft className="w-6 h-6" />
+              <span className="hidden md:inline font-medium">Back to Gallery</span>
+            </button>
+          </div>
 
-      {/* Custom Native-Scrollable Thumbnails Bar */}
-      <div className="fixed bottom-0 left-0 right-0 h-24 bg-black/80 p-2 flex gap-2 overflow-x-auto hide-scrollbar items-center border-t border-white/10 scroll-smooth z-[9999] pointer-events-auto">
-        {photos.map((p, idx) => (
-          <button 
-            key={p.id}
-            id={`thumb-${idx}`}
-            onClick={() => setIndex(idx)}
-            className={`flex-shrink-0 h-16 w-16 md:h-20 md:w-20 rounded-md overflow-hidden border-2 transition-all duration-300 ${idx === index ? 'border-[#a07171] opacity-100 scale-105' : 'border-transparent opacity-40 hover:opacity-80 scale-100'}`}
-          >
-            <img src={p.url} loading="lazy" decoding="async" className="w-full h-full object-cover" />
-          </button>
-        ))}
-      </div>
+          {/* Custom Native-Scrollable Thumbnails Bar */}
+          <div className="fixed bottom-0 left-0 right-0 h-24 bg-black/80 p-2 flex gap-2 overflow-x-auto hide-scrollbar items-center border-t border-white/10 scroll-smooth z-[99999] pointer-events-auto">
+            {photos.map((p, idx) => (
+              <button 
+                key={p.id}
+                id={`thumb-${idx}`}
+                onClick={() => setIndex(idx)}
+                className={`flex-shrink-0 h-16 w-16 md:h-20 md:w-20 rounded-md overflow-hidden border-2 transition-all duration-300 ${idx === index ? 'border-[#a07171] opacity-100 scale-105' : 'border-transparent opacity-40 hover:opacity-80 scale-100'}`}
+              >
+                <img src={p.url} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+              </button>
+            ))}
+          </div>
+        </>,
+        document.body
+      )}
     </>
   );
 }
