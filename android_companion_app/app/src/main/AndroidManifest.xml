@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     
     <application
         android:allowBackup="true"
@@ -22,6 +23,6 @@
             </intent-filter>
         </activity>
         
-        <service android:name=".service.FtpServerService" android:exported="false" />
+        <service android:name=".service.FtpServerService" android:exported="false" android:foregroundServiceType="dataSync" />
     </application>
 </manifest>

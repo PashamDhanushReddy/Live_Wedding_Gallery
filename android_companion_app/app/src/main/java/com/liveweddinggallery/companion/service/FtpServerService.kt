@@ -15,6 +15,7 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
+import android.content.pm.ServiceInfo
 import androidx.core.app.NotificationCompat
 
 class FtpServerService : Service() {
@@ -28,7 +29,11 @@ class FtpServerService : Service() {
             .setSmallIcon(android.R.drawable.ic_menu_camera)
             .build()
             
-        startForeground(1, notification)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            startForeground(1, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC)
+        } else {
+            startForeground(1, notification)
+        }
         
         startFtpServer()
         UploadManager.start(this)
