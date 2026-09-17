@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import { Camera, Image as ImageIcon, Calendar, MapPin } from "lucide-react";
-import coupleImage from "../assets/couple.png";
 import bgImage from "../assets/bg_blue.png";
 import mobileBg from "../assets/mobile_bg.png";
 
