@@ -39,7 +39,7 @@ executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 # Initialize InsightFace model globally
 from insightface.app import FaceAnalysis
 logger.info("Initializing InsightFace model...")
-face_app = FaceAnalysis(name='buffalo_sc', providers=['CPUExecutionProvider'])
+face_app = FaceAnalysis(name='buffalo_l', providers=['CPUExecutionProvider'])
 face_app.prepare(ctx_id=0, det_size=(640, 640))
 face_lock = threading.Lock()
 
@@ -247,7 +247,7 @@ def main():
     # Specify a range of passive ports to avoid ephemeral port exhaustion on Windows
     handler.passive_ports = range(60000, 65535)
     
-    address = ('0.0.0.0', 2121) # using 2121 to avoid root port restrictions
+    address = ('0.0.0.0', 21) # using standard port 21 so Windows Explorer doesn't require a port
     server = FTPServer(address, handler)
     
     # Strictly limit max connections to prevent Windows select() limit crashes (max 512 fds)
