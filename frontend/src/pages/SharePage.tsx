@@ -7,7 +7,12 @@ export default function SharePage() {
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    setUrl(window.location.origin);
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const baseUrl = isLocalhost 
+      ? window.location.origin 
+      : "https://pashamdhanushreddy.github.io/Live_Wedding_Gallery/";
+    
+    setUrl(baseUrl);
   }, []);
 
   const handleCopy = () => {
