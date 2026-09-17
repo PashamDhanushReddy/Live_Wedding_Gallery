@@ -140,8 +140,8 @@ class PhotoDeleteView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
-# Use a thread pool to prevent OOM when uploading 400 photos
-_upload_executor = concurrent.futures.ThreadPoolExecutor(max_workers=2)
+# Use a thread pool to prevent OOM when uploading 400 photos (Must be 1 to prevent Render 512MB RAM limit crash)
+_upload_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 def process_manual_upload(wedding, filename, file_bytes, folder):
     try:
