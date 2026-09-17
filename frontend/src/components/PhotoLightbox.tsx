@@ -54,12 +54,14 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
     }
   };
 
-  useEffect(() => {
-    const el = document.getElementById(`thumb-${activeIndex}`);
+  // Scroll thumbnail into view after the slide transition finishes to prevent stutter
+  const handleSlideTransitionEnd = (swiper: SwiperType) => {
+    setActiveIndex(swiper.activeIndex);
+    const el = document.getElementById(`thumb-${swiper.activeIndex}`);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     }
-  }, [activeIndex]);
+  };
 
   return (
     <AnimatePresence>
@@ -100,25 +102,24 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
           </button>
 
           <Swiper
-            modules={[Zoom, Virtual]}
+            modules={[Zoom]}
             zoom={true}
-            virtual={{ enabled: true, addSlidesBefore: 2, addSlidesAfter: 2 }}
             spaceBetween={20}
             slidesPerView={1}
             initialSlide={initialIndex}
             onSwiper={(swiper) => (swiperRef.current = swiper)}
             onSlideChange={(swiper) => setActiveIndex(swiper.activeIndex)}
+            onSlideChangeTransitionEnd={handleSlideTransitionEnd}
             className="w-full h-full"
           >
-            {photos.map((photo, index) => (
-              <SwiperSlide key={photo.id} virtualIndex={index}>
+            {photos.map((photo) => (
+              <SwiperSlide key={photo.id}>
                 <div className="swiper-zoom-container w-full h-full p-4 md:p-12 pb-24 md:pb-12">
                   <img 
                     src={photo.url} 
                     alt="Wedding Photo" 
                     loading="lazy"
                     className="max-w-full max-h-[70vh] md:max-h-[85vh] object-contain rounded-md"
-                    style={{ transform: 'translateZ(0)' }}
                   />
                 </div>
               </SwiperSlide>
