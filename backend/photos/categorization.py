@@ -75,6 +75,12 @@ def categorize_photo(photo):
     elif has_groom and not has_bride and total_prominent == 1:
         new_folder = "Groom"
         
+    # If the photo was in an AI folder but no longer matches, clear the folder
+    if new_folder is None and photo.folder in ["Bride", "Groom", "Bride and Groom"]:
+        photo.folder = ""
+        photo.save(update_fields=['folder'])
+        return True
+        
     if new_folder and photo.folder != new_folder:
         photo.folder = new_folder
         photo.save(update_fields=['folder'])
