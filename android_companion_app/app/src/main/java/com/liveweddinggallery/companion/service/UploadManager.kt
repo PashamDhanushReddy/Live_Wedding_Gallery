@@ -63,8 +63,9 @@ object UploadManager {
             }
             
             // Crucial: Give Android Garbage Collector time to clear memory between heavy photo uploads
+            // and give the WiFi radio 3 seconds to breathe so the Camera's FTP upload doesn't stall!
             System.gc()
-            delay(500)
+            delay(3000)
         }
     }
 
