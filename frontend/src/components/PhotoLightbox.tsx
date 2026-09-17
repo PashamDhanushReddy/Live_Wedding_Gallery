@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, Download, Trash2 } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Zoom, Virtual } from 'swiper/modules';
 import type { Swiper as SwiperType } from 'swiper';
@@ -65,7 +65,7 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
 
   // Memoize the Swiper component to prevent React from re-rendering all 100+ slides
   // every time the activeIndex state changes, which causes massive stuttering during swipes.
-  const memoizedSwiper = React.useMemo(() => (
+  const memoizedSwiper = useMemo(() => (
     <Swiper
       modules={[Zoom]}
       zoom={true}
