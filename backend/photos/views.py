@@ -182,37 +182,16 @@ def process_manual_upload(wedding, filename, file_bytes, folder):
             height=upload_result.get('height'),
             file_size=upload_result.get('bytes'),
             folder=folder,
-            processing_status='PROCESSING',
+            processing_status='PENDING', # Set to PENDING so you can run reprocess_photos.py later
             upload_status='COMPLETED',
             captured_at=timezone.now()
         )
         
-        # Face extraction
-        try:
-            app = get_face_app()
-            
-            # Read from bytes
-            np_arr = np.frombuffer(file_bytes, np.uint8)
-            img = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-            
-            with _face_lock:
-                faces = app.get(img)
-            
-            for face in faces:
-                bbox = face.bbox
-                embedding = face.embedding.tolist()
-                Face.objects.create(
-                    photo=photo,
-                    embedding=embedding,
-                    x=bbox[0],
-                    y=bbox[1],
-                    width=bbox[2] - bbox[0],
-                    height=bbox[3] - bbox[1],
-                    detection_confidence=face.det_score
-                )
-        except Exception as e:
-            logger.error(f"Face extraction failed: {e}")
-            
+        # We skip Face Extraction on the cloud server to prevent 512MB RAM OOM crashes!
+        # The photo will just stay in its uploaded folder until you run reprocess_photos.py locally.
+        
+        # (Face Extraction removed)
+        
         photo.processing_status = 'COMPLETED'
         photo.save()
         
