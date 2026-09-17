@@ -128,7 +128,7 @@ export default function GalleryPage() {
         
         {/* User's Exact Floral Background Image */}
         <div 
-          className="absolute inset-0 w-full h-full bg-no-repeat bg-cover bg-top opacity-50 -z-10 pointer-events-none [mask-image:linear-gradient(to_bottom,white_80%,transparent_100%)]"
+          className="absolute inset-0 w-full h-full bg-no-repeat bg-[length:100%_100%] opacity-50 -z-10 pointer-events-none [mask-image:linear-gradient(to_bottom,white_80%,transparent_100%)]"
           style={{ backgroundImage: `url(${bgImage})` }}
         ></div>
 
