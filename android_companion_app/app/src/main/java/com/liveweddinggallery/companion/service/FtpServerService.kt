@@ -9,7 +9,6 @@ import org.apache.ftpserver.FtpServerFactory
 import org.apache.ftpserver.listener.ListenerFactory
 import org.apache.ftpserver.usermanager.impl.BaseUser
 import org.apache.ftpserver.usermanager.impl.WritePermission
-import org.apache.ftpserver.usermanager.impl.WritePermission
 import org.apache.ftpserver.usermanager.PropertiesUserManagerFactory
 import org.apache.ftpserver.DataConnectionConfigurationFactory
 import java.io.File
