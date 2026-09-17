@@ -103,7 +103,7 @@ def get_face_app():
         with _face_lock:
             if _face_app is None:
                 from insightface.app import FaceAnalysis
-                _face_app = FaceAnalysis(name='buffalo_sc')
+                _face_app = FaceAnalysis(name='buffalo_l')
                 _face_app.prepare(ctx_id=0, det_size=(640, 640))
     return _face_app
 
