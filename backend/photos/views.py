@@ -153,10 +153,23 @@ def process_manual_upload(wedding, filename, file_bytes, folder):
             return
             
         logger.info(f"Uploading {filename} to Cloudinary folder {folder}...")
-        upload_result = cloudinary.uploader.upload(
-            file_bytes,
-            folder=f"weddings/{wedding.slug}/{folder}/originals"
-        )
+        
+        # Add retry logic for unexpected SSL drops or network blips
+        import time
+        max_retries = 3
+        upload_result = None
+        for attempt in range(max_retries):
+            try:
+                upload_result = cloudinary.uploader.upload(
+                    file_bytes,
+                    folder=f"weddings/{wedding.slug}/{folder}/originals"
+                )
+                break  # Success, break the loop
+            except Exception as e:
+                logger.warning(f"Upload failed for {filename} (attempt {attempt + 1}/{max_retries}): {e}")
+                if attempt == max_retries - 1:
+                    raise  # Re-raise on final attempt
+                time.sleep(2)
         
         logger.info(f"Saving {filename} to DB...")
         photo = Photo.objects.create(
