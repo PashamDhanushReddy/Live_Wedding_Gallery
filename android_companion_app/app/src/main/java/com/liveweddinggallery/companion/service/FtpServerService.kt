@@ -11,14 +11,40 @@ import org.apache.ftpserver.usermanager.impl.BaseUser
 import org.apache.ftpserver.usermanager.impl.WritePermission
 import org.apache.ftpserver.usermanager.PropertiesUserManagerFactory
 import java.io.File
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.os.Build
+import androidx.core.app.NotificationCompat
 
 class FtpServerService : Service() {
     private var server: FtpServer? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        createNotificationChannel()
+        val notification = NotificationCompat.Builder(this, "ftp_channel_id")
+            .setContentTitle("FTP Server Running")
+            .setContentText("Listening for camera photos...")
+            .setSmallIcon(android.R.drawable.ic_menu_camera)
+            .build()
+            
+        startForeground(1, notification)
+        
         startFtpServer()
         UploadManager.start(this)
         return START_STICKY
+    }
+    
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val serviceChannel = NotificationChannel(
+                "ftp_channel_id",
+                "FTP Server Channel",
+                NotificationManager.IMPORTANCE_LOW
+            )
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(serviceChannel)
+        }
     }
 
     private fun startFtpServer() {
