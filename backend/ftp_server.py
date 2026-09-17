@@ -61,6 +61,9 @@ class DjangoAuthorizer(DummyAuthorizer):
     def validate_authentication(self, username, password, handler):
         # Authenticate against CameraConnection
         try:
+            from django.db import close_old_connections
+            close_old_connections()
+            
             # We use the wedding slug as the password for simplicity, or hardcoded for now
             # In a real app, query CameraConnection for username/password
             connection = CameraConnection.objects.get(username=username)
@@ -82,6 +85,9 @@ class WeddingFTPHandler(FTPHandler):
 
     def process_photo(self, username, file_path):
         try:
+            from django.db import close_old_connections
+            close_old_connections()
+            
             connection = CameraConnection.objects.get(username=username)
             wedding = connection.wedding
             

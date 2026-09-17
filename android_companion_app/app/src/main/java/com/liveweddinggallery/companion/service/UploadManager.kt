@@ -58,6 +58,10 @@ object UploadManager {
             } else {
                 Log.d("UploadManager", "Upload failed for ${file.name}")
             }
+            
+            // Crucial: Give Android Garbage Collector time to clear memory between heavy photo uploads
+            System.gc()
+            delay(500)
         }
     }
 
@@ -111,12 +115,9 @@ object UploadManager {
             val bitmap = android.graphics.BitmapFactory.decodeFile(file.absolutePath, options)
 
             if (bitmap != null) {
-                val baos = ByteArrayOutputStream()
-                // Compress to JPEG at 90% quality for maximum web clarity
-                bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, baos)
-                val imageBytes = baos.toByteArray()
-                
-                outputStream.write(imageBytes)
+                // Compress directly to the network stream! 
+                // This prevents massive OutOfMemory crashes on Android when uploading 30+ photos.
+                bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, outputStream)
                 bitmap.recycle() // Free memory immediately
             } else {
                 // Fallback: If decode fails, send raw file (though this might hit Render limits)
