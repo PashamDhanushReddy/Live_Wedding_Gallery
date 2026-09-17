@@ -2,11 +2,9 @@
 import { createPortal } from "react-dom";
 import Lightbox from "yet-another-react-lightbox";
 import Zoom from "yet-another-react-lightbox/plugins/zoom";
-import Counter from "yet-another-react-lightbox/plugins/counter";
 import { Download, Trash2, ChevronLeft } from "lucide-react";
 
 import "yet-another-react-lightbox/styles.css";
-import "yet-another-react-lightbox/plugins/counter.css";
 
 interface Photo {
   id: number;
@@ -66,7 +64,7 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
         index={index}
         on={{ view: ({ index: currentIndex }) => setIndex(currentIndex) }}
         slides={photos.map((p) => ({ src: p.url, id: p.id }))}
-        plugins={[Zoom, Counter]}
+        plugins={[Zoom]}
         animation={{ fade: 250, swipe: 250 }}
         carousel={{ finite: false }}
         styles={{
@@ -105,8 +103,8 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
       
       {createPortal(
         <>
-          {/* Custom Back Button overlay mimicking the top-left one */}
-          <div className="fixed top-0 left-0 p-4 z-[99999] pointer-events-none flex items-center">
+          {/* Custom Top Header with Back Button and Centered Counter */}
+          <div className="fixed top-0 left-0 right-0 p-4 z-[99999] pointer-events-none flex items-center justify-between">
             <button 
               onClick={onClose}
               className="flex items-center gap-1 text-white/70 hover:text-white pointer-events-auto p-2"
@@ -114,6 +112,13 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
               <ChevronLeft className="w-6 h-6" />
               <span className="hidden md:inline font-medium">Back to Gallery</span>
             </button>
+            
+            <div className="text-white/70 text-sm font-medium absolute left-1/2 -translate-x-1/2">
+              {index + 1} / {photos.length}
+            </div>
+            
+            {/* Spacer for flex layout to not overlap with YARL's top-right toolbar */}
+            <div className="w-24"></div>
           </div>
 
           {/* Custom Native-Scrollable Thumbnails Bar */}
