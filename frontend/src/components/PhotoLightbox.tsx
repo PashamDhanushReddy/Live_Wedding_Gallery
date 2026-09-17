@@ -73,7 +73,7 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
         }}
         toolbar={{
           buttons: [
-            <div key="left-group" className="absolute top-0 left-0 p-2 md:p-4 flex items-center z-50">
+            <div key="left-group" className="fixed top-0 left-0 p-2 md:p-4 flex items-center z-[100000]">
               <button 
                 type="button" 
                 className="flex items-center gap-1 text-white hover:text-white p-2 bg-black/40 hover:bg-black/60 rounded-lg transition-colors" 
