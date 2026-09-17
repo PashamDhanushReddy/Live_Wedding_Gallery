@@ -35,6 +35,13 @@ logger = logging.getLogger("ftp_server")
 # Limit concurrent processing to prevent OOM errors when bursts of photos arrive
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=10)
 
+# Initialize InsightFace model globally
+from insightface.app import FaceAnalysis
+logger.info("Initializing InsightFace model...")
+face_app = FaceAnalysis(name='buffalo_sc', providers=['CPUExecutionProvider'])
+face_app.prepare(ctx_id=0, det_size=(640, 640))
+face_lock = threading.Lock()
+
 # Load environment
 load_dotenv(BASE_DIR.parent / '.env')
 cloudinary.config(
@@ -184,13 +191,14 @@ class WeddingFTPHandler(FTPHandler):
     def extract_faces(self, photo, file_path):
         try:
             import cv2
-            from insightface.app import FaceAnalysis
-            
-            app = FaceAnalysis(name='buffalo_sc')
-            app.prepare(ctx_id=0, det_size=(640, 640))
             
             img = cv2.imread(file_path)
-            faces = app.get(img)
+            if img is None:
+                logger.error(f"Failed to read image {file_path}")
+                return
+                
+            with face_lock:
+                faces = face_app.get(img)
             
             for face in faces:
                 bbox = face.bbox
