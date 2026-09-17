@@ -22,6 +22,8 @@ def run():
     for photo in photos:
         # Check if faces already exist
         if Face.objects.filter(photo=photo).exists():
+            from photos.categorization import categorize_photo
+            categorize_photo(photo)
             continue
 
         file_path = os.path.join(FOLDER, photo.original_filename)
@@ -46,6 +48,9 @@ def run():
                 )
             total_faces += len(faces_data)
             print(f"  -> Added {len(faces_data)} faces.")
+            
+            from photos.categorization import categorize_photo
+            categorize_photo(photo)
         else:
             print("  -> No faces found.")
         

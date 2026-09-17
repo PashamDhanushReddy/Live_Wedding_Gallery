@@ -86,6 +86,10 @@ class PhotoSyncView(APIView):
                         detection_confidence=face_data.get('confidence', 1.0)
                     )
                     
+                # 2.5 Categorize photo
+                from photos.categorization import categorize_photo
+                categorize_photo(photo)
+                    
                 # 3. Broadcast to WebSockets
                 from asgiref.sync import async_to_sync
                 from channels.layers import get_channel_layer
@@ -176,3 +180,50 @@ class FaceSearchView(APIView):
             "matches_count": photos.count(),
             "photos": serializer.data
         }, status=200)
+
+class SetReferenceFaceView(APIView):
+    def post(self, request, slug):
+        wedding = get_object_or_404(Wedding, slug=slug, is_active=True)
+        role = request.data.get('role') # 'bride' or 'groom'
+        
+        if role not in ['bride', 'groom']:
+            return Response({"error": "Invalid role. Must be 'bride' or 'groom'."}, status=400)
+            
+        if 'file' not in request.FILES:
+            return Response({"error": "No file provided"}, status=400)
+            
+        file_obj = request.FILES['file']
+        
+        try:
+            import cv2
+            import numpy as np
+            from photos.views import get_face_app, _face_lock
+            
+            # Read image from memory
+            file_bytes = np.asarray(bytearray(file_obj.read()), dtype=np.uint8)
+            img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+            
+            app = get_face_app()
+            
+            with _face_lock:
+                faces = app.get(img)
+                
+            if not faces:
+                return Response({"error": "No faces found in the image."}, status=400)
+                
+            # Assume the largest/most confident face is the reference
+            target_embedding = faces[0].embedding.tolist()
+            
+            if role == 'bride':
+                wedding.bride_embedding = target_embedding
+            else:
+                wedding.groom_embedding = target_embedding
+                
+            wedding.save()
+            
+            return Response({"status": "success", "message": f"{role.capitalize()} reference face set successfully."})
+            
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            return Response({"error": f"Failed to process face: {str(e)}"}, status=500)

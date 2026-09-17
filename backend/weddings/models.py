@@ -1,4 +1,5 @@
 from django.db import models
+from pgvector.django import VectorField
 
 class Wedding(models.Model):
     slug = models.SlugField(unique=True, max_length=100)
@@ -9,6 +10,8 @@ class Wedding(models.Model):
     venue = models.CharField(max_length=200, blank=True)
     description = models.TextField(blank=True)
     cover_image = models.URLField(blank=True)
+    bride_embedding = VectorField(dimensions=512, null=True, blank=True)
+    groom_embedding = VectorField(dimensions=512, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
