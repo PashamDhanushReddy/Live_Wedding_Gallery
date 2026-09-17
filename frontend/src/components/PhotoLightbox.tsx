@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, Download, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 
 interface Photo {
   id: number;
@@ -89,26 +90,25 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
             <ChevronLeft className="w-6 h-6" />
           </button>
           
-          <motion.img
+          <TransformWrapper
             key={currentPhotoId}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.2 }}
-            src={currentPhoto?.url}
-            alt="Wedding Photo"
-            className="max-w-full max-h-[60vh] md:max-h-[85vh] object-contain rounded-md touch-none"
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.7}
-            onDragEnd={(_, { offset, velocity }) => {
-              const swipe = Math.abs(offset.x) * velocity.x;
-              if (swipe < -10000) {
-                handleNext();
-              } else if (swipe > 10000) {
-                handlePrev();
-              }
-            }}
-          />
+            initialScale={1}
+            minScale={1}
+            maxScale={5}
+            centerOnInit
+            wheel={{ step: 0.1 }}
+          >
+            <TransformComponent wrapperClass="!w-full !h-full flex items-center justify-center" contentClass="!w-full !h-full flex items-center justify-center">
+              <motion.img
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.2 }}
+                src={currentPhoto?.url}
+                alt="Wedding Photo"
+                className="max-w-full max-h-[60vh] md:max-h-[85vh] object-contain rounded-md"
+              />
+            </TransformComponent>
+          </TransformWrapper>
           
           <button 
             onClick={handleNext}
