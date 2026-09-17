@@ -21,8 +21,10 @@ export default function GalleryPage() {
   
   const tabs = [
     "All",
+    "Bride",
+    "Groom",
+    "Bride and Groom",
     "Engagement",
-    "Bride & Groom",
     "Pre-wedding Shoot",
     "Haldi",
     "Before Wedding Rituals",
