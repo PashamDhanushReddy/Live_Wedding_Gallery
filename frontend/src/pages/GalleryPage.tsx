@@ -234,15 +234,12 @@ export default function GalleryPage() {
             <div 
               key={photo.id} 
               onClick={() => openLightbox(index)}
-              className="cursor-pointer group relative rounded-xl overflow-hidden shadow-sm"
+              className="cursor-pointer group relative rounded-xl overflow-hidden shadow-sm aspect-[4/3]"
             >
               <img 
                 src={photo.thumbnail_url || photo.url} 
                 alt={photo.category} 
                 className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
-                style={{ 
-                  aspectRatio: photo.aspect?.replace('aspect-[', '').replace(']', '') || 'auto'
-                }}
               />
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
                 <p className="text-white font-medium">View Photo</p>
