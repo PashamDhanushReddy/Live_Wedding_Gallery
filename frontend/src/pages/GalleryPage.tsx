@@ -229,7 +229,7 @@ export default function GalleryPage() {
           No photos found for this category yet.
         </div>
       ) : (
-        <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 md:gap-4">
           {filteredPhotos.map((photo, index) => (
             <div 
               key={photo.id} 
