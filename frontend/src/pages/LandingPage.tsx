@@ -1,125 +1,121 @@
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Camera, Image as ImageIcon, Users, Infinity } from "lucide-react";
-import { API_BASE_URL, WEDDING_SLUG } from "../config";
+import { Camera, Image as ImageIcon, Calendar, MapPin } from "lucide-react";
+import coupleImage from "../assets/couple.png";
+import bgImage from "../assets/bg.jpg";
 
 export default function LandingPage() {
-  const [photoCount, setPhotoCount] = useState<number | null>(null);
-
-  useEffect(() => {
-    const fetchPhotoCount = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/photos/`);
-        if (res.ok) {
-          const data = await res.json();
-          setPhotoCount(data.length || 0);
-        }
-      } catch (err) {
-        console.error("Failed to fetch photo count", err);
-      }
-    };
-    fetchPhotoCount();
-  }, []);
-
   return (
-    <div className="flex flex-col md:flex-row min-h-[calc(100vh-5rem)]">
-      {/* Left side content overlaid on mobile, side-by-side on desktop */}
-      <div className="relative w-full md:w-1/2 bg-background flex flex-col justify-center p-8 md:p-16 lg:p-24 z-10">
-        <div className="max-w-md">
-          <p className="text-sm tracking-widest uppercase text-muted-foreground mb-4">
-            Together Forever <span className="inline-block w-8 h-px bg-muted-foreground align-middle ml-2"></span>
-          </p>
-          
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-serif text-foreground mb-4 leading-tight">
-            <span className="block whitespace-nowrap">Sandeep Reddy</span>
-            <span className="block italic text-4xl md:text-5xl lg:text-6xl text-primary font-serif my-2">&amp;</span>
-            <span className="block whitespace-nowrap">Prathyusha</span>
-          </h1>
-          
-          <div className="text-muted-foreground mt-6 space-y-1">
-            <p className="font-medium text-foreground">November 21, 2026</p>
-            <p>Hyderabad, Telangana</p>
-          </div>
-          
-          <div className="w-8 h-px bg-border my-6"></div>
-          
-          <p className="text-muted-foreground mb-10 leading-relaxed">
-            A celebration of love, family and beautiful moments. 
-            Join us in reliving the memories of our special day.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 mb-16">
-            <Link 
-              to="/photos" 
-              className="flex items-center justify-center gap-2 bg-primary text-primary-foreground px-8 py-4 rounded-full font-medium hover:bg-primary/90 transition-all shadow-md"
-            >
-              <Camera className="w-5 h-5" />
-              View All Photos
-            </Link>
-            <Link 
-              to="/find" 
-              className="flex items-center justify-center gap-2 bg-transparent border border-foreground/20 text-foreground px-8 py-4 rounded-full font-medium hover:bg-secondary transition-all"
-            >
-              <ImageIcon className="w-5 h-5" />
-              Find My Photos
-            </Link>
-          </div>
+    <div className="min-h-screen relative overflow-hidden bg-[#faf7f5]">
+      {/* Background with floral top/bottom */}
+      <div 
+        className="absolute inset-0 w-full h-full bg-no-repeat bg-[length:100%_100%] opacity-40 z-0 pointer-events-none"
+        style={{ backgroundImage: `url(${bgImage})` }}
+      ></div>
 
-          {/* Stats Bar */}
-          <div className="flex items-center justify-between border-t border-border/50 pt-8 mt-auto">
-            <div className="text-center">
-              <ImageIcon className="w-5 h-5 mx-auto mb-2 text-muted-foreground" />
-              <p className="font-semibold text-lg">{photoCount !== null ? photoCount : "..."}</p>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Photos</p>
-            </div>
-            <div className="w-px h-12 bg-border/50"></div>
-            <div className="text-center">
-              <HeartIcon className="w-5 h-5 mx-auto mb-2 text-muted-foreground" />
-              <p className="font-semibold text-lg">1</p>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Beautiful Day</p>
-            </div>
-            <div className="w-px h-12 bg-border/50"></div>
-            <div className="text-center">
-              <Users className="w-5 h-5 mx-auto mb-2 text-muted-foreground" />
-              <p className="font-semibold text-lg">Many</p>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Loved Ones</p>
-            </div>
-            <div className="w-px h-12 bg-border/50"></div>
-            <div className="text-center">
-              <Infinity className="w-5 h-5 mx-auto mb-2 text-muted-foreground" />
-              <p className="font-semibold text-lg">Forever</p>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider">Memories</p>
-            </div>
+      <div className="relative z-10 container mx-auto px-6 pt-24 pb-32 min-h-screen flex flex-col items-center justify-start text-center">
+        
+        {/* Top Tagline */}
+        <div className="flex items-center justify-center gap-4 mb-6">
+          <div className="w-12 h-px bg-border/80"></div>
+          <p className="text-xs md:text-sm tracking-[0.3em] uppercase text-[#554c4c] font-medium">
+            Together Forever
+          </p>
+          <div className="w-12 h-px bg-border/80"></div>
+        </div>
+        
+        {/* Names */}
+        <div className="relative mb-6">
+          <h1 className="text-5xl md:text-7xl font-serif text-[#2d2626] leading-tight flex flex-col">
+            <span className="mb-[-10px] md:mb-[-20px] z-10">Sandeep Reddy</span>
+            <span className="italic text-4xl md:text-6xl text-[#a07171] font-serif z-0 my-2">&amp;</span>
+            <span className="mt-[-10px] md:mt-[-20px] z-10">Prathyusha</span>
+          </h1>
+
+          {/* Floating side text (hidden on very small screens, visible on md+) */}
+          <div className="absolute -right-8 md:-right-24 top-1/2 md:top-2/3 transform -translate-y-1/2 rotate-[-10deg] hidden sm:flex flex-col items-center">
+            <p className="font-script text-2xl md:text-3xl text-[#a07171] leading-none">Two<br/>Hearts<br/>One Story</p>
+            <HeartIcon className="w-5 h-5 text-[#a07171] mt-1" />
           </div>
         </div>
-      </div>
-      
-      {/* Right side Hero Image */}
-      <div className="w-full md:w-1/2 h-[50vh] md:h-auto relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/10 z-10"></div>
-        <img 
-          src="https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=2000" 
-          alt="Sandeep and Prathyusha" 
-          className="w-full h-full object-cover object-center"
-        />
         
-        {/* Floating text on image */}
-        <div className="absolute right-12 bottom-24 z-20 hidden md:block">
-          <p className="font-serif italic text-white/90 text-3xl rotate-[-5deg]">
-            Every picture<br/>tells a story
+        {/* Cursive Tagline */}
+        <div className="flex flex-col items-center mb-10">
+          <p className="font-script text-3xl md:text-4xl text-[#2d2626] mb-3">
+            A beautiful journey<br/>begins...
           </p>
-          <svg className="w-12 h-12 text-white/80 mt-2 ml-4 rotate-[-10deg]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
-          </svg>
+          <HeartIcon className="w-6 h-6 text-[#a07171]" />
         </div>
+        
+        {/* Date & Location */}
+        <div className="flex flex-col items-center gap-3 text-sm md:text-base text-[#554c4c] mb-6">
+          <div className="flex items-center gap-3">
+            <Calendar className="w-4 h-4 md:w-5 md:h-5 text-[#a07171]" />
+            <span className="font-medium">November 21, 2026</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <MapPin className="w-4 h-4 md:w-5 md:h-5 text-[#a07171]" />
+            <span className="font-medium">Hyderabad, Telangana</span>
+          </div>
+        </div>
+        
+        <div className="w-12 h-px bg-[#a07171]/40 mb-6"></div>
+        
+        {/* Paragraph */}
+        <p className="text-[#554c4c] font-serif text-sm md:text-lg max-w-md mx-auto leading-relaxed mb-10">
+          A celebration of love, family and beautiful moments. <br/>
+          Join us in reliving the memories of our special day.
+        </p>
+        
+        {/* Buttons (Standard pills instead of big boxes) */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-20 z-20">
+          <Link 
+            to="/photos" 
+            className="flex items-center justify-center gap-2 bg-[#a07171] text-white px-8 py-3.5 rounded-full font-medium hover:bg-[#8a5f5f] transition-all shadow-md"
+          >
+            <Camera className="w-5 h-5" />
+            View All Photos
+          </Link>
+          <Link 
+            to="/find" 
+            className="flex items-center justify-center gap-2 bg-white/60 backdrop-blur-sm border border-[#a07171]/30 text-[#554c4c] px-8 py-3.5 rounded-full font-medium hover:bg-white/80 transition-all shadow-sm"
+          >
+            <ImageIcon className="w-5 h-5" />
+            Find My Photos
+          </Link>
+        </div>
+        
+        {/* Bottom Text */}
+        <div className="flex items-center justify-center gap-4 mt-auto z-20">
+          <div className="w-12 md:w-20 h-px bg-border/80"></div>
+          <div className="flex items-center gap-2">
+            <p className="font-script text-2xl md:text-3xl text-[#a07171]">
+              Thank you for being a part of our story
+            </p>
+            <HeartIcon className="w-5 h-5 text-[#a07171]" />
+          </div>
+          <div className="w-12 md:w-20 h-px bg-border/80"></div>
+        </div>
+
       </div>
+
+      {/* Couple Image at Bottom Center */}
+      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-[90%] md:w-[60%] lg:w-[45%] max-w-2xl pointer-events-none z-0">
+        <img 
+          src={coupleImage} 
+          alt="Sandeep and Prathyusha" 
+          className="w-full h-auto object-contain object-bottom drop-shadow-2xl opacity-90"
+        />
+        {/* Soft fade at the bottom to blend with the page edge */}
+        <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-[#faf7f5] to-transparent"></div>
+      </div>
+
     </div>
   );
 }
 
 function HeartIcon(props: any) {
   return (
-    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
     </svg>
   );
