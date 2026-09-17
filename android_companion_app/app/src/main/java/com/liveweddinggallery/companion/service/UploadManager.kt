@@ -42,8 +42,11 @@ object UploadManager {
         if (!ftpDir.exists()) return
 
         val validExtensions = listOf(".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif")
+        val now = System.currentTimeMillis()
         val files = ftpDir.listFiles()?.filter { file -> 
-            file.isFile && validExtensions.any { ext -> file.name.endsWith(ext, true) }
+            file.isFile && 
+            validExtensions.any { ext -> file.name.endsWith(ext, true) } &&
+            (now - file.lastModified() > 3000) // File must be at least 3 seconds old to ensure FTP finished writing it!
         } ?: return
 
         val prefs = context.getSharedPreferences("WeddingCompanion", Context.MODE_PRIVATE)
