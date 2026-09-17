@@ -145,6 +145,9 @@ _upload_executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
 def process_manual_upload(wedding, filename, file_bytes, folder):
     try:
+        from django.db import close_old_connections
+        close_old_connections()
+        
         from photos.serializers import PhotoSerializer
         
         # Prevent duplicates
