@@ -15,11 +15,16 @@ export default function Header() {
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-border/50">
-      <div className="container mx-auto px-4 md:px-8 h-20 flex items-center justify-between">
+    <header className="sticky top-0 left-0 z-50 w-full bg-white/60 backdrop-blur-md border-b border-border/50">
+      <div className="container mx-auto px-4 md:px-8 h-14 md:h-16 flex items-center justify-between">
         {/* Logo */}
-        <Link to="/" className="flex items-center gap-1 font-serif text-3xl font-bold tracking-tight">
-          S <Heart className="w-5 h-5 text-primary fill-primary" /> P
+        <Link to="/" className="flex flex-col items-center">
+          <div className="flex items-center gap-1 font-serif text-2xl md:text-3xl font-bold tracking-tight text-[#2d2626]">
+            S <Heart className="w-4 h-4 md:w-5 md:h-5 text-[#b36c73] fill-[#b36c73]" /> P
+          </div>
+          <p className="text-[7px] md:text-[9px] tracking-[0.3em] text-[#554c4c] font-semibold uppercase mt-0 md:mt-0.5">
+            Our Story Forever
+          </p>
         </Link>
 
         {/* Desktop Nav */}
