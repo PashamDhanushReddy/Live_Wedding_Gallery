@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Camera, Image as ImageIcon, Calendar, MapPin } from "lucide-react";
 import coupleImage from "../assets/couple.png";
-import bgImage from "../assets/bg.jpg";
+import bgImage from "../assets/bg_blue.png";
 
 export default function LandingPage() {
   return (
