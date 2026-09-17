@@ -19,8 +19,8 @@ def main():
     print("  PHOTO RE-CATEGORIZATION SCRIPT")
     print("=======================================\n")
     
-    print("Loading AI Face Model (buffalo_l) - Please wait...")
-    app = FaceAnalysis(name='buffalo_l', providers=['CPUExecutionProvider'])
+    print("Loading AI Face Model (buffalo_sc) - Please wait...")
+    app = FaceAnalysis(name='buffalo_sc', providers=['CPUExecutionProvider'])
     app.prepare(ctx_id=0, det_size=(640, 640))
     print("AI Model loaded successfully!\n")
 
