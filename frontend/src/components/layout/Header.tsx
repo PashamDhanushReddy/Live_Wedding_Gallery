@@ -1,24 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
 import { Heart, Menu, Search, Camera } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    // Check initial position in case of refresh midway
-    handleScroll();
-    
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
 
   const navLinks = [
     { name: "Home", path: "/" },
@@ -28,13 +15,7 @@ export default function Header() {
   ];
 
   return (
-    <header 
-      className={`fixed top-0 left-0 z-50 w-full transition-all duration-300 ${
-        isScrolled || mobileMenuOpen
-          ? "bg-white/80 backdrop-blur-md border-b border-border/50 shadow-sm py-0"
-          : "bg-transparent border-b border-transparent py-1"
-      }`}
-    >
+    <header className="fixed top-0 left-0 z-50 w-full bg-white/50 backdrop-blur-md border-b border-white/20 shadow-sm transition-all duration-300">
       <div className="container mx-auto px-4 md:px-8 h-14 md:h-16 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex flex-col items-center">
