@@ -126,8 +126,10 @@ export default function GalleryPage() {
         <p className="text-xs font-semibold tracking-[0.2em] text-muted-foreground uppercase mb-4">
           The Wedding Of
         </p>
-        <h1 className="text-4xl md:text-5xl font-serif text-foreground mb-4">
-          Sandeep Reddy & Prathyusha
+        <h1 className="text-4xl md:text-5xl font-serif text-foreground mb-4 leading-tight">
+          <span className="block whitespace-nowrap">Sandeep Reddy</span>
+          <span className="block italic text-3xl md:text-4xl text-primary font-serif my-2">&amp;</span>
+          <span className="block whitespace-nowrap">Prathyusha</span>
         </h1>
         <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
           <span>November 21, 2026</span>

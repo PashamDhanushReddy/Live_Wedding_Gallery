@@ -31,8 +31,9 @@ export default function LandingPage() {
           </p>
           
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-serif text-foreground mb-4 leading-tight">
-            Sandeep Reddy <br/>
-            <span className="italic text-4xl md:text-5xl lg:text-6xl text-primary font-serif">&</span> Prathyusha
+            <span className="block whitespace-nowrap">Sandeep Reddy</span>
+            <span className="block italic text-4xl md:text-5xl lg:text-6xl text-primary font-serif my-2">&amp;</span>
+            <span className="block whitespace-nowrap">Prathyusha</span>
           </h1>
           
           <div className="text-muted-foreground mt-6 space-y-1">
