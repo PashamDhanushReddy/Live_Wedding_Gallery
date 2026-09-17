@@ -235,9 +235,15 @@ def main():
 
     handler = WeddingFTPHandler
     handler.authorizer = authorizer
+    # Specify a range of passive ports to avoid ephemeral port exhaustion on Windows
+    handler.passive_ports = range(60000, 65535)
     
     address = ('0.0.0.0', 2121) # using 2121 to avoid root port restrictions
     server = FTPServer(address, handler)
+    
+    # Strictly limit max connections to prevent Windows select() limit crashes (max 512 fds)
+    server.max_cons = 256
+    server.max_cons_per_ip = 128
     
     logger.info(f"Starting Cloud FTP Server on {address[0]}:{address[1]}...")
     server.serve_forever()
