@@ -36,12 +36,18 @@ logger = logging.getLogger("ftp_server")
 # and absolutely prevent OOM errors when bursts of photos arrive.
 executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
 
-# Initialize InsightFace model globally
-from insightface.app import FaceAnalysis
-logger.info("Initializing InsightFace model...")
-face_app = FaceAnalysis(name='buffalo_l', providers=['CPUExecutionProvider'])
-face_app.prepare(ctx_id=0, det_size=(640, 640))
-face_lock = threading.Lock()
+# We will initialize InsightFace lazily inside the worker thread to prevent OpenMP segfaults on Windows.
+_face_app = None
+_face_lock = threading.Lock()
+
+def get_face_app():
+    global _face_app
+    if _face_app is None:
+        from insightface.app import FaceAnalysis
+        logger.info("Initializing InsightFace model inside worker thread...")
+        _face_app = FaceAnalysis(name='buffalo_l', providers=['CPUExecutionProvider'])
+        _face_app.prepare(ctx_id=0, det_size=(640, 640))
+    return _face_app
 
 # Load environment
 load_dotenv(BASE_DIR.parent / '.env')
@@ -206,8 +212,9 @@ class WeddingFTPHandler(FTPHandler):
                 logger.error(f"Failed to read image {file_path}")
                 return
                 
-            with face_lock:
-                faces = face_app.get(img)
+            with _face_lock:
+                app = get_face_app()
+                faces = app.get(img)
             
             for face in faces:
                 bbox = face.bbox
