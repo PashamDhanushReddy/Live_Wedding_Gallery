@@ -73,18 +73,19 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
         }}
         toolbar={{
           buttons: [
-            <button 
-              key="back" 
-              type="button" 
-              className="yarl__button mr-auto flex items-center gap-1" 
-              onClick={onClose} 
-              title="Back"
-            >
-              <ChevronLeft className="w-6 h-6 md:w-8 md:h-8" />
-              <span className="hidden md:inline font-medium text-base md:text-lg pl-1">Back to Gallery</span>
-            </button>,
-            <div key="counter" className="text-white/90 text-sm font-medium bg-black/40 px-3 py-1.5 rounded-full flex items-center justify-center mr-2">
-              {index + 1} / {photos.length}
+            <div key="left-group" className="absolute top-0 left-0 p-2 md:p-4 flex items-center z-50">
+              <button 
+                type="button" 
+                className="flex items-center gap-1 text-white hover:text-white p-2 bg-black/40 hover:bg-black/60 rounded-lg transition-colors" 
+                onClick={onClose} 
+                title="Back"
+              >
+                <ChevronLeft className="w-6 h-6 md:w-8 md:h-8" />
+                <span className="hidden md:inline font-medium text-base md:text-lg pr-1">Back to Gallery</span>
+              </button>
+              <div className="text-white/90 text-sm font-medium bg-black/40 px-3 py-1.5 rounded-full flex items-center justify-center ml-2 md:ml-4">
+                {index + 1} / {photos.length}
+              </div>
             </div>,
             <button key="download" type="button" className="yarl__button" onClick={handleDownload} title="Download">
               <Download className="w-5 h-5 md:w-6 md:h-6" />
