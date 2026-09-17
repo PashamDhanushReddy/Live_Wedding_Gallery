@@ -152,9 +152,9 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
                 opacity: { duration: 0.2 }
               }}
               className="absolute inset-0 flex items-center justify-center p-4 md:p-12"
-              onTouchStart={onTouchStart}
-              onTouchMove={onTouchMove}
-              onTouchEnd={onTouchEndEvent}
+              onTouchStartCapture={onTouchStart}
+              onTouchMoveCapture={onTouchMove}
+              onTouchEndCapture={onTouchEndEvent}
             >
               <TransformWrapper
                 initialScale={1}
