@@ -12,7 +12,7 @@ export default function LandingPage() {
         style={{ backgroundImage: `url(${bgImage})` }}
       ></div>
 
-      <div className="relative z-10 container mx-auto px-6 pt-24 pb-32 min-h-screen flex flex-col items-center justify-start text-center">
+      <div className="relative z-10 container mx-auto px-6 pt-12 md:pt-16 pb-16 min-h-[90vh] flex flex-col items-center justify-start text-center">
         
         {/* Top Tagline */}
         <div className="flex items-center justify-center gap-4 mb-4 md:mb-6">
