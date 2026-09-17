@@ -9,7 +9,9 @@ import org.apache.ftpserver.FtpServerFactory
 import org.apache.ftpserver.listener.ListenerFactory
 import org.apache.ftpserver.usermanager.impl.BaseUser
 import org.apache.ftpserver.usermanager.impl.WritePermission
+import org.apache.ftpserver.usermanager.impl.WritePermission
 import org.apache.ftpserver.usermanager.PropertiesUserManagerFactory
+import org.apache.ftpserver.DataConnectionConfigurationFactory
 import java.io.File
 import android.app.Notification
 import android.app.NotificationChannel
@@ -56,9 +58,14 @@ class FtpServerService : Service() {
         try {
             val serverFactory = FtpServerFactory()
             
-            // 1. Configure Port
+            // 1. Configure Port and Passive Data Connections
             val factory = ListenerFactory()
             factory.port = 2121
+            
+            val dataConnFactory = DataConnectionConfigurationFactory()
+            dataConnFactory.passivePorts = "50000-55000"
+            factory.dataConnectionConfiguration = dataConnFactory.createDataConnectionConfiguration()
+            
             serverFactory.addListener("default", factory.createListener())
 
             // 2. Setup the Home Directory
