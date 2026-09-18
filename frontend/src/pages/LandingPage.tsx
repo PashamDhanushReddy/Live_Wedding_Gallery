@@ -60,7 +60,7 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-3">
             <MapPin className="w-4 h-4 md:w-5 md:h-5 text-[#a07171]" />
-            <span className="font-medium">Hyderabad, Telangana</span>
+            <span className="font-medium">Nizamabad, Telangana</span>
           </div>
         </div>
         

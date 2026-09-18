@@ -83,7 +83,7 @@ export default function AdminLayout() {
             <h2 className="font-semibold text-lg flex items-center gap-2">
               Sandeep Reddy <span className="text-primary text-xs">❤️</span> Prathyusha Reddy
             </h2>
-            <p className="text-xs text-muted-foreground">November 21, 2026 | Hyderabad, Telangana</p>
+            <p className="text-xs text-muted-foreground">November 21, 2026 | Nizamabad, Telangana</p>
           </div>
 
           <div className="flex items-center gap-6">
