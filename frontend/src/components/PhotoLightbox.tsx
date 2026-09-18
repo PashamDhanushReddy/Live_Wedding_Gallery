@@ -19,11 +19,15 @@ interface PhotoLightboxProps {
 }
 
 export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete }: PhotoLightboxProps) {
-  const [index, setIndex] = useState(initialIndex);
+  const [activePhotoId, setActivePhotoId] = useState(() => photos[initialIndex]?.id);
   const thumbBarRef = useRef<HTMLDivElement>(null);
 
+  // Derive current index from the active photo ID
+  let currentIndex = photos.findIndex(p => p.id === activePhotoId);
+  if (currentIndex === -1) currentIndex = 0;
+
   const handleDownload = async () => {
-    const currentPhoto = photos[index];
+    const currentPhoto = photos[currentIndex];
     if (!currentPhoto?.url) return;
     try {
       const response = await fetch(currentPhoto.url);
@@ -44,18 +48,18 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
   };
 
   const handleDelete = () => {
-    const currentPhoto = photos[index];
+    const currentPhoto = photos[currentIndex];
     if (!currentPhoto) return;
     if (onDelete) onDelete(currentPhoto.id);
   };
 
   // Scroll active thumbnail into center view
   useEffect(() => {
-    const el = document.getElementById(`thumb-${index}`);
+    const el = document.getElementById(`thumb-${currentIndex}`);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     }
-  }, [index]);
+  }, [currentIndex]);
 
   // Prevent thumbnail scrolling from triggering main image swipe natively
   useEffect(() => {
@@ -85,8 +89,8 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
       <Lightbox
         open={true}
         close={onClose}
-        index={index}
-        on={{ view: ({ index: currentIndex }) => setIndex(currentIndex) }}
+        index={currentIndex}
+        on={{ view: ({ index: newIndex }) => setActivePhotoId(photos[newIndex]?.id) }}
         slides={photos.map((p) => ({ src: p.url, id: p.id }))}
         plugins={[Zoom]}
         animation={{ fade: 250, swipe: 250 }}
@@ -108,7 +112,7 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
                 <span className="hidden md:inline font-medium text-base md:text-lg pr-1">Back to Gallery</span>
               </button>
               <div className="text-white/90 text-sm font-medium bg-black/40 px-3 py-1.5 rounded-full flex items-center justify-center ml-2 md:ml-4">
-                {index + 1} / {photos.length}
+                {currentIndex + 1} / {photos.length}
               </div>
             </div>,
             <button key="download" type="button" className="yarl__button" onClick={handleDownload} title="Download">
@@ -150,8 +154,8 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
               <button 
                 key={p.id}
                 id={`thumb-${idx}`}
-                onClick={() => setIndex(idx)}
-                className={`flex-shrink-0 h-16 w-16 md:h-20 md:w-20 rounded-md overflow-hidden border-2 transition-all duration-300 ${idx === index ? 'border-[#a07171] opacity-100 scale-105' : 'border-transparent opacity-40 hover:opacity-80 scale-100'}`}
+                onClick={() => setActivePhotoId(p.id)}
+                className={`flex-shrink-0 h-16 w-16 md:h-20 md:w-20 rounded-md overflow-hidden border-2 transition-all duration-300 ${idx === currentIndex ? 'border-[#a07171] opacity-100 scale-105' : 'border-transparent opacity-40 hover:opacity-80 scale-100'}`}
               >
                 <img src={p.url} loading="lazy" decoding="async" className="w-full h-full object-cover" />
               </button>
