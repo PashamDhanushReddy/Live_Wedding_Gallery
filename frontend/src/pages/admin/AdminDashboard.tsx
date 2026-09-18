@@ -13,7 +13,7 @@ export default function AdminDashboard() {
           />
           <div className="absolute inset-0 bg-gradient-to-r from-transparent to-[#2a2424]"></div>
           <div className="absolute bottom-6 left-6 text-white">
-            <h3 className="font-serif text-2xl mb-1">Sandeep Reddy<br/>& Prathyusha</h3>
+            <h3 className="font-serif text-2xl mb-1">Sandeep Reddy<br/>& Prathyusha Reddy</h3>
             <p className="text-xs text-white/70">November 21, 2026</p>
           </div>
         </div>

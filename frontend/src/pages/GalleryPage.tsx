@@ -152,7 +152,7 @@ export default function GalleryPage() {
                 &amp;
                 <span className="w-12 md:w-16 h-[1px] bg-border/80"></span>
               </span>
-              <span className="block whitespace-nowrap">Prathyusha</span>
+              <span className="block whitespace-nowrap">Prathyusha Reddy</span>
             </h1>
             
             <p className="font-script text-xl md:text-2xl text-[#a07171] mb-4 md:mb-6 mt-1 md:mt-2 px-2 leading-tight">Two Hearts &middot; One Journey &middot; Forever Together</p>

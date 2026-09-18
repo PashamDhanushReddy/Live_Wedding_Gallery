@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:2:1-27:12
-INJECTED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:2:1-27:12
-INJECTED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:2:1-27:12
-INJECTED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:2:1-27:12
+ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:2:1-28:12
+INJECTED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:2:1-28:12
+INJECTED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:2:1-28:12
+INJECTED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:2:1-28:12
 MERGED from [com.google.android.material:material:1.11.0] C:\Users\Thokala Rakesh\.gradle\caches\transforms-4\6aa0ee074608c2ac23f49bc5c7e14820\transformed\material-1.11.0\AndroidManifest.xml:17:1-24:12
 MERGED from [androidx.appcompat:appcompat-resources:1.6.1] C:\Users\Thokala Rakesh\.gradle\caches\transforms-4\531085aa8860d0d9dc81be2eca33387c\transformed\jetified-appcompat-resources-1.6.1\AndroidManifest.xml:17:1-22:12
 MERGED from [androidx.constraintlayout:constraintlayout:2.0.1] C:\Users\Thokala Rakesh\.gradle\caches\transforms-4\754e7b14151d64f9d39417b2497a440f\transformed\constraintlayout-2.0.1\AndroidManifest.xml:2:1-11:12
@@ -70,9 +70,13 @@ uses-permission#android.permission.FOREGROUND_SERVICE
 ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:8:5-77
 	android:name
 		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:8:22-74
+uses-permission#android.permission.FOREGROUND_SERVICE_DATA_SYNC
+ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:9:5-87
+	android:name
+		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:9:22-84
 application
-ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:10:5-26:19
-INJECTED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:10:5-26:19
+ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:11:5-27:19
+INJECTED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:11:5-27:19
 MERGED from [com.google.android.material:material:1.11.0] C:\Users\Thokala Rakesh\.gradle\caches\transforms-4\6aa0ee074608c2ac23f49bc5c7e14820\transformed\material-1.11.0\AndroidManifest.xml:22:5-20
 MERGED from [com.google.android.material:material:1.11.0] C:\Users\Thokala Rakesh\.gradle\caches\transforms-4\6aa0ee074608c2ac23f49bc5c7e14820\transformed\material-1.11.0\AndroidManifest.xml:22:5-20
 MERGED from [androidx.constraintlayout:constraintlayout:2.0.1] C:\Users\Thokala Rakesh\.gradle\caches\transforms-4\754e7b14151d64f9d39417b2497a440f\transformed\constraintlayout-2.0.1\AndroidManifest.xml:9:5-20
@@ -94,39 +98,41 @@ MERGED from [androidx.startup:startup-runtime:1.1.1] C:\Users\Thokala Rakesh\.gr
 	android:appComponentFactory
 		ADDED from [androidx.core:core:1.12.0] C:\Users\Thokala Rakesh\.gradle\caches\transforms-4\6ab06ef78aa4a2e52f892f1b599d37fa\transformed\core-1.12.0\AndroidManifest.xml:28:18-86
 	android:supportsRtl
-		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:15:9-35
+		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:16:9-35
 	android:label
-		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:14:9-42
+		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:15:9-42
 	android:icon
-		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:13:9-58
+		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:14:9-58
 	android:allowBackup
-		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:11:9-35
+		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:12:9-35
 	android:theme
-		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:16:9-65
+		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:17:9-65
 	android:usesCleartextTraffic
-		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:12:9-44
+		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:13:9-44
 activity#com.liveweddinggallery.companion.MainActivity
-ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:18:9-23:20
+ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:19:9-24:20
 	android:exported
-		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:18:48-71
+		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:19:48-71
 	android:name
-		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:18:19-47
+		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:19:19-47
 intent-filter#action:name:android.intent.action.MAIN+category:name:android.intent.category.LAUNCHER
-ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:19:13-22:29
+ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:20:13-23:29
 action#android.intent.action.MAIN
-ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:20:17-69
+ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:21:17-69
 	android:name
-		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:20:25-66
+		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:21:25-66
 category#android.intent.category.LAUNCHER
-ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:21:17-77
+ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:22:17-77
 	android:name
-		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:21:27-74
+		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:22:27-74
 service#com.liveweddinggallery.companion.service.FtpServerService
-ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:25:9-86
+ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:26:9-127
 	android:exported
-		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:25:59-83
+		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:26:59-83
+	android:foregroundServiceType
+		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:26:84-124
 	android:name
-		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:25:18-58
+		ADDED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml:26:18-58
 uses-sdk
 INJECTED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from C:\Users\Thokala Rakesh\OneDrive\Desktop\Dhanush\live_wedding\android_companion_app\app\src\main\AndroidManifest.xml

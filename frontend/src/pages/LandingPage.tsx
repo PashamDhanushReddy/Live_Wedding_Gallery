@@ -34,7 +34,7 @@ export default function LandingPage() {
           <h1 className="text-5xl md:text-7xl font-serif text-[#2d2626] leading-tight flex flex-col">
             <span className="mb-[-10px] md:mb-[-20px] z-10">Sandeep Reddy</span>
             <span className="italic text-4xl md:text-6xl text-[#a07171] font-serif z-0 my-2">&amp;</span>
-            <span className="mt-[-10px] md:mt-[-20px] z-10">Prathyusha</span>
+            <span className="mt-[-10px] md:mt-[-20px] z-10">Prathyusha Reddy</span>
           </h1>
 
           {/* Floating side text (hidden on very small screens, visible on md+) */}

@@ -41,7 +41,7 @@ export default function PhotographerDashboard() {
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-white uppercase tracking-wider">Photographer Dashboard</h1>
-        <p className="text-neutral-400 mt-2">Live Wedding: SandeepReddy & Prathyusha</p>
+        <p className="text-neutral-400 mt-2">Live Wedding: Sandeep Reddy & Prathyusha Reddy</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

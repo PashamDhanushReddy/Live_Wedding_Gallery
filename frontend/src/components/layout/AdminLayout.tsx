@@ -81,7 +81,7 @@ export default function AdminLayout() {
         <header className="h-20 bg-white border-b border-border flex items-center justify-between px-8 shrink-0">
           <div>
             <h2 className="font-semibold text-lg flex items-center gap-2">
-              Sandeep Reddy <span className="text-primary text-xs">❤️</span> Prathyusha
+              Sandeep Reddy <span className="text-primary text-xs">❤️</span> Prathyusha Reddy
             </h2>
             <p className="text-xs text-muted-foreground">November 21, 2026 | Hyderabad, Telangana</p>
           </div>
