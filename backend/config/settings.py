@@ -32,6 +32,8 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-gq8qif6wzdswo5c@x--(i
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = ['live-wedding-gallery.onrender.com', 'localhost', '127.0.0.1']
+if DEBUG:
+    ALLOWED_HOSTS.append('*')
 
 
 # Application definition
@@ -121,7 +123,7 @@ CHANNEL_LAYERS = {
 }
 
 # Configure CORS for GitHub Pages
-CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOWED_ORIGINS = [
     "https://pashamdhanushreddy.github.io",
     "http://localhost:5173", # for local vite development
