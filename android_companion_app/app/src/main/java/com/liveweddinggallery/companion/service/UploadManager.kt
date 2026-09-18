@@ -46,7 +46,7 @@ object UploadManager {
         val files = ftpDir.listFiles()?.filter { file -> 
             file.isFile && 
             validExtensions.any { ext -> file.name.endsWith(ext, true) } &&
-            (now - file.lastModified() > 3000) // File must be at least 3 seconds old to ensure FTP finished writing it!
+            (now - file.lastModified() > 1000) // Reduced from 3000ms: 1 second is enough for FTP to finish writing
         } ?: return
 
         val prefs = context.getSharedPreferences("WeddingCompanion", Context.MODE_PRIVATE)
@@ -63,9 +63,8 @@ object UploadManager {
             }
             
             // Crucial: Give Android Garbage Collector time to clear memory between heavy photo uploads
-            // and give the WiFi radio 3 seconds to breathe so the Camera's FTP upload doesn't stall!
             System.gc()
-            delay(3000)
+            delay(500) // Reduced from 3000ms: 500ms is enough for GC and WiFi recovery
         }
     }
 

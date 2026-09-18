@@ -3,8 +3,8 @@ import time
 import hashlib
 from queue_manager import update_checksum, update_status
 
-FILE_STABLE_CHECK_INTERVAL = int(os.environ.get('FILE_STABLE_CHECK_INTERVAL', 2))
-FILE_STABLE_CHECK_COUNT = int(os.environ.get('FILE_STABLE_CHECK_COUNT', 3))
+FILE_STABLE_CHECK_INTERVAL = int(os.environ.get('FILE_STABLE_CHECK_INTERVAL', 1))
+FILE_STABLE_CHECK_COUNT = int(os.environ.get('FILE_STABLE_CHECK_COUNT', 2))
 
 def calculate_checksum(file_path):
     sha256_hash = hashlib.sha256()
