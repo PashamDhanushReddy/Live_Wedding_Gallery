@@ -279,7 +279,7 @@ def process_ingestion_job(job_id: uuid.UUID):
                         'format': job.format,
                         'resource_type': job.resource_type,
                         'folder': job.folder,
-                        'processing_status': 'PROCESSING',
+                        'processing_status': 'COMPLETED',
                         'upload_status': 'COMPLETED',
                         'captured_at': timezone.now(),
                     }
@@ -293,6 +293,7 @@ def process_ingestion_job(job_id: uuid.UUID):
                     photo.height = job.image_height
                     photo.format = job.format
                     photo.resource_type = job.resource_type
+                    photo.processing_status = 'COMPLETED'
                     if 'upload_res' in locals():
                         photo.thumbnail_url = upload_res.get('thumbnail_url', photo.thumbnail_url)
                     photo.save()
@@ -301,6 +302,10 @@ def process_ingestion_job(job_id: uuid.UUID):
                 job.status = 'DB_REGISTERED'
                 job.db_registered_at = timezone.now()
                 job.save(update_fields=['photo', 'status', 'db_registered_at', 'updated_at'])
+
+                # Broadcast immediately to WebSockets so guests see photo in real-time
+                from photos.realtime import broadcast_new_photo
+                broadcast_new_photo(job.photo)
 
             # Checkpoint 3: Face Processing (InsightFace with pgvector embeddings)
             job.status = 'FACE_PROCESSING'
@@ -332,18 +337,10 @@ def process_ingestion_job(job_id: uuid.UUID):
                 job.last_error = f"Face extraction warning: {face_err}"
                 job.save(update_fields=['last_error', 'updated_at'])
 
-            job.photo.refresh_from_db()
-            job.photo.processing_status = 'COMPLETED'
-            job.photo.save(update_fields=['processing_status'])
-
             # Checkpoint 4: Mark Job COMPLETED
             job.status = 'COMPLETED'
             job.completed_at = timezone.now()
             job.save(update_fields=['status', 'completed_at', 'updated_at'])
-
-            # Checkpoint 5: Broadcast lightweight event to WebSockets
-            from photos.realtime import broadcast_new_photo
-            broadcast_new_photo(job.photo)
 
             # Final step: Safe staging file removal ONLY after successful completion commit
             if job.staging_path and os.path.exists(job.staging_path):

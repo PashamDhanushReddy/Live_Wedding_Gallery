@@ -7,14 +7,22 @@ from django.core.cache import cache
 logger = logging.getLogger(__name__)
 
 
-def invalidate_gallery_cache(wedding_id: int, wedding_slug: str = None):
+def invalidate_gallery_cache(wedding_id: int, wedding_slug: str = None, folder: str = None):
     """Purges cached gallery pages and photo counts when photos are added or deleted."""
     if not wedding_id:
         return
     try:
-        common_folders = ['all', 'Bride_and_Groom', 'Guests', 'Ceremony', 'Reception', 'Family', 'Uncategorized']
+        common_folders = [
+            'all', 'All', 'Bride_and_Groom', 'Bride', 'Groom', 'Engagement',
+            'Pre-wedding_Shoot', 'Wedding_Day', 'Haldi', 'Before_Wedding_Rituals',
+            'Reception', 'Guests', 'Ceremony', 'Family', 'Uncategorized'
+        ]
+        if folder:
+            common_folders.append(str(folder).replace(' ', '_'))
+            common_folders.append(str(folder))
+
         keys_to_delete = []
-        for f in common_folders:
+        for f in set(common_folders):
             keys_to_delete.append(f"wedding_photo_count:{wedding_id}:{f}")
             keys_to_delete.append(f"gallery_p1:{wedding_id}:{f}:25")
             keys_to_delete.append(f"gallery_p1:{wedding_id}:{f}:50")

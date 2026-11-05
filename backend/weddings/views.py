@@ -112,12 +112,21 @@ class WeddingPhotosView(generics.ListAPIView):
         wedding = get_object_or_404(Wedding, slug=slug, is_active=True)
         
         # Base query: completed photos for this wedding
-        qs = Photo.objects.filter(wedding=wedding, processing_status='COMPLETED')
+        qs = Photo.objects.filter(wedding=wedding).filter(
+            models.Q(processing_status='COMPLETED') | models.Q(upload_status='COMPLETED')
+        )
         
-        # 1. Folder / Category filter
+        # 1. Folder / Category filter (resilient to spaces, underscores, and casing)
         folder = self.request.query_params.get('folder')
         if folder and folder.lower() != 'all':
-            qs = qs.filter(folder=folder)
+            f_norm = folder.strip()
+            f_space = f_norm.replace('_', ' ')
+            f_under = f_norm.replace(' ', '_')
+            qs = qs.filter(
+                models.Q(folder__iexact=f_norm) |
+                models.Q(folder__iexact=f_space) |
+                models.Q(folder__iexact=f_under)
+            )
             
         # 2. Exact date filter (YYYY-MM-DD) or date range
         date_param = self.request.query_params.get('date')
