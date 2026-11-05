@@ -403,3 +403,4 @@ class WeddingPhotoUploader(tk.Tk):
 if __name__ == "__main__":
     app = WeddingPhotoUploader()
     app.mainloop()
+

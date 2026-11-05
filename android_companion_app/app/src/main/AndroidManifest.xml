@@ -8,10 +8,12 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     
     <application
         android:allowBackup="false"
         android:usesCleartextTraffic="true"
+        android:autoRevokePermissions="disallowed"
         android:icon="@android:drawable/sym_def_app_icon"
         android:label="Wedding Companion"
         android:supportsRtl="true"
