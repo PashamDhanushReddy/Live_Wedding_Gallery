@@ -48,6 +48,7 @@ def health_check(request):
     return JsonResponse(status_report, status=http_status)
 
 urlpatterns = [
+    path('', health_check, name='root_health_check'),
     path('admin/', admin.site.urls),
     path('api/health/', health_check, name='health_check'),
     path('api/observability/', include('observability.urls')),
