@@ -352,12 +352,16 @@ class PhoneUploadView(APIView):
                         'message': 'Upload already completed'
                     }, status=status.HTTP_200_OK)
                 elif existing_job.status in ['QUEUED', 'UPLOADING', 'CLOUDINARY_COMPLETED', 'DB_REGISTERED', 'FACE_PROCESSING']:
-                    return Response({
-                        'status': existing_job.status,
-                        'job_id': str(existing_job.job_id),
-                        'upload_id': upload_id,
-                        'message': 'Upload already being processed'
-                    }, status=status.HTTP_202_ACCEPTED)
+                    # If an ephemeral container restart lost the staging file before Cloudinary completed, allow fresh stage
+                    if not existing_job.cloudinary_public_id and (not existing_job.staging_path or not os.path.exists(existing_job.staging_path)):
+                        logger.warning(f"Existing job {existing_job.job_id} staging file missing on disk (interrupted by container restart). Allowing fresh stage.")
+                    else:
+                        return Response({
+                            'status': existing_job.status,
+                            'job_id': str(existing_job.job_id),
+                            'upload_id': upload_id,
+                            'message': 'Upload already being processed'
+                        }, status=status.HTTP_202_ACCEPTED)
 
         # 4. Create IngestionJob record in RECEIVED status
         job_id = uuid.uuid4()
