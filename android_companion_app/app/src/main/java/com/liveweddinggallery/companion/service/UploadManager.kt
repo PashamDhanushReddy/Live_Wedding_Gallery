@@ -117,12 +117,23 @@ object UploadManager {
     private fun scanAndEnqueueIncomingFiles(context: Context) {
         val ftpDir = getFtpIncomingDir(context)
         val validExtensions = setOf("jpg", "jpeg", "png", "webp")
+        val db = UploadQueueDatabase.getInstance(context)
 
         val files = ftpDir.listFiles()?.filter { f ->
             f.isFile && validExtensions.contains(f.extension.lowercase()) && !f.name.endsWith(".part")
         } ?: return
 
+        val now = System.currentTimeMillis()
         for (file in files) {
+            val ageMs = now - file.lastModified()
+            val validation = FileIntegrityValidator.validateFile(file)
+            if (validation is FileIntegrityValidator.ValidationResult.Valid && db.isDuplicateChecksum(validation.checksumSha256)) {
+                // Windows File Explorer grace period: delete from ftp folder only after 30 seconds
+                if (ageMs > 30000) {
+                    file.delete()
+                }
+                continue
+            }
             processIncomingFile(file, context)
         }
     }
@@ -147,6 +158,7 @@ object UploadManager {
 
         when (validation) {
             is FileIntegrityValidator.ValidationResult.Valid -> {
+                val ageMs = System.currentTimeMillis() - file.lastModified()
                 // Deduplication check
                 if (db.isDuplicateChecksum(validation.checksumSha256)) {
                     CompanionLogger.i(
@@ -155,7 +167,9 @@ object UploadManager {
                         status = "SKIPPED",
                         details = "Identical photo already in queue or uploaded (SHA: ${validation.checksumSha256.take(8)})"
                     )
-                    file.delete()
+                    if (ageMs > 30000) {
+                        file.delete()
+                    }
                     return
                 }
 
@@ -163,19 +177,25 @@ object UploadManager {
                 val currentFolder = prefs.getString(KEY_CURRENT_FOLDER, DEFAULT_FOLDER) ?: DEFAULT_FOLDER
                 val uploadId = UUID.randomUUID().toString()
 
-                // Move to persistent ready directory with collision-free unique name
+                // Copy to persistent ready directory with collision-free unique name
+                // Leaving original in ftp/ so Windows File Explorer can verify SIZE/MDTM without 550 errors
                 val readyDir = getReadyDir(context)
                 val uniqueSafeName = "${System.currentTimeMillis()}_${uploadId.take(8)}_${file.name}"
                 val targetFile = File(readyDir, uniqueSafeName)
 
-                val moved = file.renameTo(targetFile)
-                val storedPath = if (moved) targetFile.absolutePath else file.absolutePath
+                try {
+                    file.copyTo(targetFile, overwrite = true)
+                } catch (e: Exception) {
+                    CompanionLogger.e("FILE_COPY_FAIL", uploadId = uploadId, filename = file.name, details = e.message ?: "", throwable = e)
+                    return
+                }
+                val storedPath = targetFile.absolutePath
 
                 val enqueued = db.enqueue(
                     uploadId = uploadId,
                     originalName = file.name,
                     filePath = storedPath,
-                    fileSize = if (moved) targetFile.length() else file.length(),
+                    fileSize = targetFile.length(),
                     checksumSha256 = validation.checksumSha256,
                     folder = currentFolder
                 )

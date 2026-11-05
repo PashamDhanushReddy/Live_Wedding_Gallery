@@ -15,6 +15,7 @@ import androidx.lifecycle.lifecycleScope
 import com.liveweddinggallery.companion.db.UploadQueueDatabase
 import com.liveweddinggallery.companion.service.FtpServerService
 import com.liveweddinggallery.companion.util.CompanionLogger
+import com.liveweddinggallery.companion.util.NetworkUtils
 import com.liveweddinggallery.companion.util.StorageMonitor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -140,49 +141,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun refreshIpAddress() {
-        val ip = getActiveWifiOrHotspotIp()
+        val ip = NetworkUtils.getActiveWifiOrHotspotIp()
         if (ip.isNotEmpty()) {
             tvIpAddress.text = ip
         } else {
             tvIpAddress.text = "Connect Wi-Fi / Hotspot"
         }
-    }
-
-    /**
-     * Resolves the active IPv4 address from network interfaces.
-     * Works seamlessly for both Wi-Fi Station mode and Mobile Hotspot (AP) mode.
-     */
-    private fun getActiveWifiOrHotspotIp(): String {
-        try {
-            val interfaces = NetworkInterface.getNetworkInterfaces()
-            val candidateIps = mutableListOf<String>()
-
-            while (interfaces.hasMoreElements()) {
-                val iface = interfaces.nextElement()
-                if (iface.isLoopback || !iface.isUp) continue
-
-                val name = iface.name.lowercase()
-                val isWireless = name.contains("wlan") || name.contains("ap") || name.contains("rndis") || name.contains("swlan")
-
-                val addresses = iface.inetAddresses
-                while (addresses.hasMoreElements()) {
-                    val addr = addresses.nextElement()
-                    if (!addr.isLoopbackAddress && addr is Inet4Address) {
-                        val host = addr.hostAddress ?: ""
-                        if (host.isNotEmpty() && !host.startsWith("127.")) {
-                            if (isWireless) {
-                                return host // Highest priority: Wi-Fi or Hotspot interface
-                            }
-                            candidateIps.add(host)
-                        }
-                    }
-                }
-            }
-            if (candidateIps.isNotEmpty()) {
-                return candidateIps.first()
-            }
-        } catch (_: Exception) {}
-        return ""
     }
 
     private fun startPeriodicUiUpdater() {

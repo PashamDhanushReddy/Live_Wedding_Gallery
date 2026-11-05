@@ -12,10 +12,11 @@ import android.os.IBinder
 import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import com.liveweddinggallery.companion.util.CompanionLogger
+import com.liveweddinggallery.companion.util.NetworkUtils
+import org.apache.ftpserver.ConnectionConfigFactory
 import org.apache.ftpserver.DataConnectionConfigurationFactory
 import org.apache.ftpserver.FtpServer
 import org.apache.ftpserver.FtpServerFactory
-import org.apache.ftpserver.listener.ListenerFactory
 import org.apache.ftpserver.usermanager.PropertiesUserManagerFactory
 import org.apache.ftpserver.usermanager.impl.BaseUser
 import org.apache.ftpserver.usermanager.impl.WritePermission
@@ -145,18 +146,37 @@ class FtpServerService : Service() {
         try {
             val serverFactory = FtpServerFactory()
 
-            // 1. Configure Port and Passive Data Connections
-            val factory = ListenerFactory().apply {
-                port = FTP_PORT
-                idleTimeout = 120 // 120s idle timeout
-            }
+            // 1. Connection Limits: Support multiple concurrent client threads for batch uploads
+            val connConfig = ConnectionConfigFactory().apply {
+                maxLogins = 500
+                maxThreads = 64
+                maxLoginFailures = 20
+                isAnonymousLoginEnabled = false
+            }.createConnectionConfig()
+            serverFactory.connectionConfig = connConfig
 
+            // 2. Configure Passive Data Connections with Device's Local IP
+            val localIp = NetworkUtils.getActiveWifiOrHotspotIp()
             val dataConnFactory = DataConnectionConfigurationFactory().apply {
                 passivePorts = PASSIVE_PORTS
-                idleTime = 120
+                idleTime = 300
+                if (localIp.isNotEmpty()) {
+                    passiveExternalAddress = localIp
+                    passiveAddress = localIp
+                }
             }
-            factory.dataConnectionConfiguration = dataConnFactory.createDataConnectionConfiguration()
-            serverFactory.addListener("default", factory.createListener())
+
+            // 3. Attach crash-proof AndroidNioListener
+            val androidListener = AndroidNioListener(
+                serverAddress = null,
+                port = FTP_PORT,
+                implicitSsl = false,
+                sslConfiguration = null,
+                dataConnectionConfig = dataConnFactory.createDataConnectionConfiguration(),
+                idleTimeout = 300,
+                sessionFilter = null
+            )
+            serverFactory.addListener("default", androidListener)
 
             // 2. Setup Base Home Directory
             val ftpDir = File(filesDir, "ftp")
