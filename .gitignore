@@ -6,7 +6,11 @@ __pycache__/
 node_modules/
 .DS_Store
 watcher.log
+*.log
 test.txt
 uploader/WATCH_FOLDER/
 backend/db.sqlite3
 backend/media/
+backend/backups/
+*.json.gz
+*.sha256

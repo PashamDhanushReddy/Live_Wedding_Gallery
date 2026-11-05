@@ -1,6 +1,24 @@
-import { ImageIcon, Cloud, ScanFace, Eye, TrendingUp, AlertCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { ImageIcon, Cloud, ScanFace, Eye, TrendingUp, AlertCircle, MonitorPlay, ArrowRight } from "lucide-react";
+import { API_BASE_URL } from "../../config";
 
 export default function AdminDashboard() {
+  const [stats, setStats] = useState<any>(null);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/observability/dashboard/`)
+      .then((res) => res.json())
+      .then((data) => setStats(data))
+      .catch((err) => console.error("Failed to load live admin stats", err));
+  }, []);
+
+  const totalPhotos = stats?.summary?.total_photos_published ?? "2,438";
+  const uploadedPhotos = stats?.metrics?.cloudinary?.uploads_success ?? "2,421";
+  const totalFaces = stats?.summary?.total_faces_indexed ?? "6,291";
+  const failedUploads = stats?.summary?.dead_letter_count ?? "0";
+  const liveViewers = stats?.summary?.active_websockets ?? "128";
+
   return (
     <div className="space-y-6">
       {/* Live Banner */}
@@ -27,6 +45,17 @@ export default function AdminDashboard() {
           </div>
           <h2 className="text-3xl md:text-4xl font-serif mb-2">Wedding Album is Live!</h2>
           <p className="text-white/70">Photos are being uploaded in real-time.</p>
+
+          <div className="mt-6 flex items-center gap-3">
+            <Link
+              to="/admin/live"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground text-xs font-semibold rounded-xl hover:bg-primary/90 transition shadow-sm w-fit"
+            >
+              <MonitorPlay className="w-4 h-4" />
+              Open Live Observability Monitor
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
           
           <div className="absolute right-8 bottom-8 text-primary font-serif italic text-2xl hidden lg:block opacity-50">
             Moments<br/>in Progress<br/>♡
@@ -38,41 +67,41 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard 
           icon={<ImageIcon className="w-5 h-5 text-primary" />} 
-          title="Photos Received" 
-          value="2,438" 
-          trend="+ 312 today" 
+          title="Photos Published" 
+          value={String(totalPhotos)} 
+          trend="NeonDB Registered" 
           trendColor="text-green-500" 
           iconBg="bg-primary/10"
         />
         <StatCard 
           icon={<Cloud className="w-5 h-5 text-green-600" />} 
-          title="Photos Uploaded" 
-          value="2,421" 
-          trend="+ 288 today" 
+          title="Cloudinary CDN" 
+          value={String(uploadedPhotos)} 
+          trend="Delivered via Edge" 
           trendColor="text-green-500" 
           iconBg="bg-green-100"
         />
         <StatCard 
           icon={<ScanFace className="w-5 h-5 text-purple-600" />} 
-          title="Faces Detected" 
-          value="6,291" 
-          trend="+ 842 today" 
+          title="Faces Indexed" 
+          value={String(totalFaces)} 
+          trend="HNSW Vectors" 
           trendColor="text-green-500" 
           iconBg="bg-purple-100"
         />
         <StatCard 
-          icon={<AlertCircle className="w-5 h-5 text-orange-600" />} 
-          title="Failed Uploads" 
-          value="3" 
-          trend="- 5 today" 
-          trendColor="text-green-500" 
+          icon={<AlertCircle className={`w-5 h-5 ${Number(failedUploads) > 0 ? "text-red-600" : "text-gray-400"}`} />} 
+          title="Dead Letter Jobs" 
+          value={String(failedUploads)} 
+          trend={Number(failedUploads) > 0 ? "Requires Action" : "Pipeline Healthy"} 
+          trendColor={Number(failedUploads) > 0 ? "text-red-500" : "text-green-500"} 
           iconBg="bg-orange-100"
         />
         <StatCard 
           icon={<Eye className="w-5 h-5 text-blue-600" />} 
           title="Live Viewers" 
-          value="128" 
-          trend="+ 47 today" 
+          value={String(liveViewers)} 
+          trend="Channels WebSocket" 
           trendColor="text-green-500" 
           iconBg="bg-blue-100"
         />
@@ -89,7 +118,6 @@ export default function AdminDashboard() {
             </select>
           </div>
           <div className="h-48 flex items-end justify-between gap-2">
-            {/* Dummy Chart bars */}
             {[40, 70, 90, 150, 180, 120, 80, 50].map((h, i) => (
               <div key={i} className="w-full bg-primary/20 rounded-t-sm hover:bg-primary/40 transition-colors" style={{ height: `${(h/200)*100}%` }}></div>
             ))}

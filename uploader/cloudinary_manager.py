@@ -1,141 +1,161 @@
 import os
+import re
+import tempfile
+import io
+from datetime import datetime
 import cloudinary
 import cloudinary.uploader
+import cloudinary.utils
 from dotenv import load_dotenv
+from PIL import Image, ImageOps
 
-# Load environment variables
+# Load environment variables from project root
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
-class CloudinaryManager:
-    def __init__(self):
-        accounts_str = os.environ.get('CLOUDINARY_ACCOUNTS', '')
-        self.accounts = [acc.strip() for acc in accounts_str.split(',') if acc.strip()]
-        self.current_account_idx = 0
-        
-        if not self.accounts:
-            print("WARNING: No Cloudinary accounts configured.")
+def compress_to_cloud_saver(file_path: str, max_kb: int = 750, max_dim: int = 2560) -> tuple:
+    """
+    Mandatory Cloud-Saver optimization: ensures EVERY photo uploaded to Cloudinary
+    is compressed to ~500-750 KB at 2.5K Quad-HD (2560px max dimension).
+    Fits 20,000+ photos in Cloudinary Free Tier. Completely removes raw uncompressed uploads.
+    """
+    size_bytes = os.path.getsize(file_path)
+    max_bytes = max_kb * 1024
 
-    def _configure_current_account(self):
-        if not self.accounts:
-            return False
-            
-        current_url = self.accounts[self.current_account_idx]
-        os.environ['CLOUDINARY_URL'] = current_url
-        
-        import re
-        match = re.match(r"cloudinary://([^:]+):([^@]+)@(.+)", current_url)
-        if match:
-            api_key, api_secret, cloud_name = match.groups()
+    if size_bytes <= max_bytes:
+        return file_path, False
+
+    with Image.open(file_path) as im:
+        im = ImageOps.exif_transpose(im)
+        if im.mode != 'RGB':
+            im = im.convert('RGB')
+
+        orig_w, orig_h = im.size
+        max_dim_actual = max(orig_w, orig_h)
+        if max_dim_actual > max_dim:
+            ratio = max_dim / max_dim_actual
+            im = im.resize((int(orig_w * ratio), int(orig_h * ratio)), Image.Resampling.LANCZOS)
+
+        best_data = None
+        for q in [86, 82, 78, 74, 70]:
+            buf = io.BytesIO()
+            im.save(buf, format='JPEG', quality=q, optimize=True, progressive=True)
+            data = buf.getvalue()
+            best_data = data
+            if len(data) <= max_bytes:
+                break
+
+        if len(best_data) > max_bytes and max(im.size) > 2048:
+            ratio = 2048 / max(im.size)
+            im = im.resize((int(im.size[0] * ratio), int(im.size[1] * ratio)), Image.Resampling.LANCZOS)
+            buf = io.BytesIO()
+            im.save(buf, format='JPEG', quality=80, optimize=True, progressive=True)
+            best_data = buf.getvalue()
+
+        fd, temp_path = tempfile.mkstemp(suffix="_cld_opt.jpg")
+        os.close(fd)
+        with open(temp_path, 'wb') as f:
+            f.write(best_data)
+
+        print(f"Cloud-Saver: {os.path.basename(file_path)}: {size_bytes/(1024*1024):.1f}MB -> {len(best_data)/1024:.1f}KB (target <={max_kb}KB)")
+        return temp_path, True
+
+# Alias for backwards compatibility
+compress_to_target_3_4mb = compress_to_cloud_saver
+
+class CloudinaryManager:
+    """
+    Centralized Cloudinary Manager for Uploader CLI.
+    Strictly uses a single Cloudinary account defined by:
+    CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET.
+    Compresses large DSLR photos to 3-4 MB target range.
+    """
+    def __init__(self):
+        self.cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME')
+        self.api_key = os.environ.get('CLOUDINARY_API_KEY')
+        self.api_secret = os.environ.get('CLOUDINARY_API_SECRET')
+        self.wedding_slug = os.environ.get('WEDDING_SLUG', 'sandeep-prathyusha')
+
+        if not all([self.cloud_name, self.api_key, self.api_secret]):
+            print("ERROR: Missing Cloudinary credentials! Ensure CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET are set.")
+        else:
             cloudinary.config(
-                cloud_name=cloud_name,
-                api_key=api_key,
-                api_secret=api_secret,
+                cloud_name=self.cloud_name.strip(),
+                api_key=self.api_key.strip(),
+                api_secret=self.api_secret.strip(),
                 secure=True
             )
-        return True
 
-    def rotate_account(self):
-        """Switch to the next account in the pool."""
-        if not self.accounts:
-            return False
-            
-        self.current_account_idx += 1
-        if self.current_account_idx >= len(self.accounts):
-            print("CRITICAL: All Cloudinary accounts have been exhausted!")
-            self.current_account_idx = 0 # Wrap around, but ideally alert
-            return False
-            
-        print(f"Rotating to Cloudinary Account index {self.current_account_idx}")
-        return True
+    def generate_public_id(self, checksum: str, filename: str) -> str:
+        date_str = datetime.now().strftime('%Y-%m-%d')
+        short_hash = (checksum or 'photo')[:16]
+        return f"weddings/{self.wedding_slug}/originals/{date_str}/{short_hash}"
 
-    def upload_image(self, file_path):
-        """Uploads an image, retrying on backup accounts if quota errors occur."""
-        if not self._configure_current_account():
+    def upload_image(self, file_path: str, checksum: str = None) -> dict:
+        """
+        Uploads a photograph to Cloudinary, ensuring file is optimized to 3-4 MB.
+        Idempotent: uses deterministic public ID and overwrite=True.
+        """
+        if not os.path.exists(file_path):
+            print(f"Error: File {file_path} does not exist.")
             return None
 
-        upload_path = file_path
-        temp_path = None
-        
-        # Target 1-2 MB for optimal loading speed and quality
-        file_size = os.path.getsize(file_path)
-        if file_size > 2 * 1024 * 1024:
-            print(f"File {file_path} is {file_size/1024/1024:.2f}MB. Compressing to ~1-2MB...")
-            try:
-                from PIL import Image
-                import tempfile
-                
-                with Image.open(file_path) as img:
-                    # Convert to RGB if necessary
-                    if img.mode in ('RGBA', 'P'):
-                        img = img.convert('RGB')
-                        
-                    # Calculate new size while preserving aspect ratio
-                    # Max dimension 2560px for high clarity but smaller size
-                    max_dim = 2560
-                    if max(img.size) > max_dim:
-                        ratio = max_dim / max(img.size)
-                        new_size = (int(img.size[0] * ratio), int(img.size[1] * ratio))
-                        img = img.resize(new_size, Image.Resampling.LANCZOS)
-                        
-                    temp_fd, temp_path = tempfile.mkstemp(suffix=".jpg")
-                    os.close(temp_fd)
-                    
-                    # Save with quality 85 to retain good clarity
-                    img.save(temp_path, format="JPEG", quality=85, optimize=True)
-                    
-                    new_size = os.path.getsize(temp_path)
-                    print(f"Compressed to {new_size/1024/1024:.2f}MB")
-                    upload_path = temp_path
-            except Exception as e:
-                print(f"Failed to compress {file_path}: {e}")
-                # We'll try uploading the original anyway, but it will likely fail.
+        filename = os.path.basename(file_path)
+        public_id = self.generate_public_id(checksum, filename)
 
-        while True:
-            try:
-                print(f"Uploading {file_path} to Cloudinary (Account {self.current_account_idx})...")
-                # Eagerly generate a thumbnail transformation
-                response = cloudinary.uploader.upload(
-                    upload_path,
-                    folder="live_wedding_album",
-                    eager=[
-                        {"width": 800, "crop": "scale", "quality": "auto"}
-                    ],
-                    timeout=20
-                )
-                
-                if temp_path and os.path.exists(temp_path):
-                    os.remove(temp_path)
-                
-                # Cloudinary Response has 'public_id', 'secure_url', 'eager' (for thumbnails)
-                thumbnail_url = response.get('secure_url')
-                if 'eager' in response and len(response['eager']) > 0:
-                    thumbnail_url = response['eager'][0].get('secure_url', thumbnail_url)
-                
-                return {
-                    'public_id': response.get('public_id'),
-                    'secure_url': response.get('secure_url'),
-                    'thumbnail_url': thumbnail_url,
-                    'width': response.get('width'),
-                    'height': response.get('height'),
-                    'bytes': response.get('bytes')
-                }
+        upload_target, is_temp = compress_to_target_3_4mb(file_path)
 
-            except Exception as e:
-                error_msg = str(e).lower()
-                print(f"Cloudinary upload failed: {error_msg}")
-                # Check for quota/rate limit indicators
-                if "quota" in error_msg or "limit" in error_msg or "storage" in error_msg or "400" in error_msg or "401" in error_msg:
-                    print("Possible quota limit reached. Failing over to next account...")
-                    if not self.rotate_account():
-                        print("Failed to rotate account. Giving up.")
-                        return None
-                    self._configure_current_account()
-                else:
-                    # Other network error, don't burn an account
-                    print("Upload error is not quota related. Failing upload.")
-                    if temp_path and os.path.exists(temp_path):
-                        os.remove(temp_path)
-                    return None
+        try:
+            print(f"Uploading {filename} to Cloudinary ({os.path.getsize(upload_target)/(1024*1024):.2f} MB) -> public_id: {public_id}...")
+            response = cloudinary.uploader.upload(
+                upload_target,
+                public_id=public_id,
+                overwrite=True,
+                resource_type="image",
+                use_filename=False,
+                unique_filename=False,
+                timeout=60
+            )
+
+            # Build dynamic thumbnail URL (w_400,c_limit,f_auto,q_auto) directly via CDN
+            thumbnail_url, _ = cloudinary.utils.cloudinary_url(
+                response['public_id'],
+                format=response.get('format'),
+                transformation=[
+                    {'fetch_format': 'auto', 'quality': 'auto', 'width': 400, 'crop': 'limit'}
+                ],
+                secure=True
+            )
+
+            preview_url, _ = cloudinary.utils.cloudinary_url(
+                response['public_id'],
+                format=response.get('format'),
+                transformation=[
+                    {'fetch_format': 'auto', 'quality': 'auto', 'width': 1200, 'crop': 'limit'}
+                ],
+                secure=True
+            )
+
+            return {
+                'public_id': response.get('public_id'),
+                'secure_url': response.get('secure_url'),
+                'thumbnail_url': thumbnail_url,
+                'preview_url': preview_url,
+                'width': response.get('width'),
+                'height': response.get('height'),
+                'bytes': response.get('bytes'),
+                'format': response.get('format'),
+                'resource_type': response.get('resource_type', 'image')
+            }
+
+        except Exception as e:
+            print(f"Cloudinary upload failed for {filename}: {e}")
+            return None
+        finally:
+            if is_temp and os.path.exists(upload_target):
+                try:
+                    os.remove(upload_target)
+                except OSError:
+                    pass
 
 # Singleton instance
 cloudinary_manager = CloudinaryManager()

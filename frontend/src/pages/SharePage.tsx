@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import QRCode from "react-qr-code";
-import { Share2, MessageCircle, Copy, Check, Smartphone } from "lucide-react";
+import { Share2, Copy, Check } from "lucide-react";
 
 export default function SharePage() {
   const [url, setUrl] = useState("");

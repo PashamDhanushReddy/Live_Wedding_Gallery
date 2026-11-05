@@ -1,12 +1,18 @@
 #!/usr/bin/env bash
-# exit on error
+# Exit immediately if a command exits with a non-zero status
 set -o errexit
 
+echo "=== [Render Build] Upgrading Pip & Installing Dependencies ==="
+pip install --upgrade pip
 pip install -r requirements.txt
 
-# If we are using neon db directly, we don't need a render postgres db, 
-# but the render.yaml includes one just in case. 
-# Either way, run migrations:
-python manage.py migrate
+echo "=== [Render Build] Running Database Migrations on NeonDB ==="
+python manage.py migrate --no-input
 
-python manage.py collectstatic --no-input
+echo "=== [Render Build] Collecting Static Files for WhiteNoise ==="
+python manage.py collectstatic --no-input --clear
+
+echo "=== [Render Build] Running Django Deployment Verification ==="
+python manage.py check
+
+echo "=== [Render Build] Build Completed Successfully ==="

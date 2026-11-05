@@ -1,3 +1,4 @@
+import sys
 import os
 import subprocess
 import threading
@@ -10,8 +11,6 @@ def start_watcher():
     
     if os.path.exists(script_path) and os.path.exists(python_exec):
         print(f"\n--- Automatically starting Photo Uploader Watcher ---")
-        
-        # Kill any existing orphaned watcher processes first (Windows specific)
         try:
             subprocess.run(
                 'wmic process where "name=\'python.exe\' and commandline like \'%watcher.py%\'" call terminate',
@@ -21,15 +20,32 @@ def start_watcher():
             pass
 
         subprocess.Popen([python_exec, "-u", script_path], cwd=base_dir)
-    else:
-        print(f"\nCould not find watcher script or python exec. Paths: {script_path}, {python_exec}")
+
+def run_startup_recovery():
+    import time
+    time.sleep(2)  # Allow database connections to finish warming up
+    try:
+        from .ingestion_service import resume_interrupted_jobs
+        resume_interrupted_jobs()
+    except Exception as e:
+        print(f"Startup job recovery notice: {e}")
 
 class PhotosConfig(AppConfig):
     name = 'photos'
 
     def ready(self):
-        # Prevent running twice due to Django's autoreloader
-        if os.environ.get('RUN_MAIN') == 'true':
-            t = threading.Thread(target=start_watcher)
-            t.daemon = True
-            t.start()
+        # Only run background worker threads during actual server runtime,
+        # never during management commands like makemigrations, migrate, test, collectstatic
+        management_commands = {'makemigrations', 'migrate', 'collectstatic', 'test', 'shell', 'dbshell', 'check'}
+        is_management = any(cmd in sys.argv for cmd in management_commands)
+        if is_management:
+            return
+
+        is_server = os.environ.get('RUN_MAIN') == 'true' or 'runserver' in sys.argv or 'daphne' in sys.argv or 'gunicorn' in sys.argv
+        if is_server:
+            if os.environ.get('ENABLE_WATCHER', 'false').lower() == 'true':
+                t_watcher = threading.Thread(target=start_watcher, daemon=True)
+                t_watcher.start()
+
+            t_recovery = threading.Thread(target=run_startup_recovery, daemon=True)
+            t_recovery.start()

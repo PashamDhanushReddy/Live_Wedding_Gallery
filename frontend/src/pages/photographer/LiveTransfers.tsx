@@ -17,7 +17,9 @@ export default function LiveTransfers() {
     // Initial fetch
     const fetchTransfers = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/photographer/transfers/`);
+        const token = localStorage.getItem("photographer_token");
+        const headers: Record<string, string> = token ? { "Authorization": `Token ${token}` } : {};
+        const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/photographer/transfers/`, { headers });
         if (res.ok) {
           const data = await res.json();
           setTransfers(data);

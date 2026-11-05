@@ -68,45 +68,12 @@ def process_file(file_path):
     if faces:
         update_faces_data(file_path, json.dumps(faces))
     
-    # Upload to Cloudinary
+    # Upload original-quality photograph to Cloudinary without destructive compression
     from cloudinary_manager import cloudinary_manager
     from api_client import sync_photo_to_server
     import os
-    
-    # Compress image if over 2MB for faster uploads
-    size_mb = os.path.getsize(file_path) / (1024 * 1024)
-    if size_mb > 2:
-        try:
-            from PIL import Image
-            import tempfile
-            with Image.open(file_path) as img:
-                if img.mode in ('RGBA', 'P'):
-                    img = img.convert('RGB')
-                
-                max_dim = 2560
-                if max(img.size) > max_dim:
-                    ratio = max_dim / max(img.size)
-                    new_size = (int(img.size[0] * ratio), int(img.size[1] * ratio))
-                    img = img.resize(new_size, Image.Resampling.LANCZOS)
-                
-                tmp = tempfile.NamedTemporaryFile(suffix='.jpg', delete=False)
-                tmp.close() # Close the file descriptor so Windows allows PIL and os to access/delete it
-                img.save(tmp.name, format='JPEG', quality=85, optimize=True)
-                upload_target = tmp.name
-                print(f"Compressed {size_mb:.1f}MB -> {os.path.getsize(upload_target)/(1024*1024):.2f}MB")
-        except Exception as e:
-            print(f"Compression failed: {e}")
-            upload_target = file_path
-    else:
-        upload_target = file_path
 
-    upload_result = cloudinary_manager.upload_image(upload_target)
-    
-    if upload_target != file_path:
-        try:
-            os.unlink(upload_target)
-        except Exception as e:
-            print(f"Failed to delete temp file {upload_target}: {e}")
+    upload_result = cloudinary_manager.upload_image(file_path, checksum=checksum)
 
     if upload_result:
         update_cloudinary_metadata(
@@ -127,7 +94,9 @@ def process_file(file_path):
             "width": upload_result['width'],
             "height": upload_result['height'],
             "file_size": upload_result['bytes'],
-            "checksum": calculate_checksum(file_path),
+            "format": upload_result.get('format', ''),
+            "resource_type": upload_result.get('resource_type', 'image'),
+            "checksum": checksum or calculate_checksum(file_path),
             "faces": faces if faces else []
         }
 

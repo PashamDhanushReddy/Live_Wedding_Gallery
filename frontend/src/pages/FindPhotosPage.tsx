@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { UploadCloud, Upload, Camera, Lock, Eye, ScanFace } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-
-import PhotoLightbox from "../components/PhotoLightbox";
 import { API_BASE_URL, WS_BASE_URL, WEDDING_SLUG } from "../config";
+
+const PhotoLightbox = lazy(() => import("../components/PhotoLightbox"));
 
 interface Photo {
   id: number;
@@ -21,19 +21,24 @@ export default function FindPhotosPage() {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [matchedPhotos, setMatchedPhotos] = useState<Photo[]>([]);
+  const [searchMessage, setSearchMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (step !== "results") return;
 
     let ws: WebSocket | null = null;
+    let refreshTimer: any = null;
     try {
       ws = new WebSocket(`${WS_BASE_URL}/weddings/${WEDDING_SLUG}/`);
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
         if (data.type === 'new_photo') {
-          // Silent refresh of matches when a new photo arrives
-          handleUploadClick(true);
+          // Debounce silent refresh by 2.5s so rapid photographer bursts consolidate into one single query
+          clearTimeout(refreshTimer);
+          refreshTimer = setTimeout(() => {
+            handleUploadClick(true);
+          }, 2500);
         } else if (data.type === 'delete_photo') {
           // Remove deleted photo from matches
           setMatchedPhotos(prev => prev.filter(p => p.id !== data.photo_id));
@@ -42,6 +47,7 @@ export default function FindPhotosPage() {
     } catch (_) {}
 
     return () => {
+      clearTimeout(refreshTimer);
       ws?.close();
     };
   }, [step]);
@@ -77,17 +83,19 @@ export default function FindPhotosPage() {
       const data = await res.json();
       
       if (!res.ok) {
-        throw new Error(data.error || "Failed to search photos");
+        throw new Error(data.message || data.error || "Failed to search photos");
       }
       
-      const mappedPhotos = data.photos.map((p: any) => ({
+      const mappedPhotos = (data.photos || []).map((p: any) => ({
         id: p.id,
-        url: p.secure_url || p.cloudinary_url,
-        thumbnail_url: p.thumbnail_url,
+        url: p.large_preview_url || p.preview_url || p.secure_url || p.cloudinary_url,
+        thumbnail_url: p.thumbnail_url || p.preview_url || p.secure_url,
+        download_url: p.download_url || p.secure_url || p.cloudinary_url,
         aspect: p.width && p.height ? `aspect-[${p.width}/${p.height}]` : "aspect-square",
       }));
       
       setMatchedPhotos(mappedPhotos);
+      setSearchMessage(data.message || null);
       setStep("results");
     } catch (err: any) {
       console.error(err);
@@ -272,8 +280,19 @@ export default function FindPhotosPage() {
             >
               <div className="flex justify-between items-end mb-8">
                 <div>
-                  <h2 className="text-3xl font-serif text-foreground mb-2">We found you!</h2>
-                  <p className="text-muted-foreground">Found {matchedPhotos.length} photos containing your face</p>
+                  <h2 className="text-3xl font-serif text-foreground mb-2">
+                    {matchedPhotos.length > 0 ? "We found you!" : "No photos matched"}
+                  </h2>
+                  <p className="text-muted-foreground">
+                    {matchedPhotos.length > 0 
+                      ? `Found ${matchedPhotos.length} photos containing your face` 
+                      : "We couldn't find any photos with this face yet. Please try another selfie with better lighting, or check back later!"}
+                  </p>
+                  {searchMessage && (
+                    <p className="text-xs text-primary mt-1 font-medium bg-primary/10 px-3 py-1 rounded-full inline-block">
+                      {searchMessage}
+                    </p>
+                  )}
                 </div>
                 <button 
                   onClick={() => {
@@ -293,18 +312,30 @@ export default function FindPhotosPage() {
                 {matchedPhotos.map((photo, index) => (
                   <div 
                     key={photo.id} 
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`View matched photo ${photo.id}`}
                     onClick={() => openLightbox(index)}
-                    className="break-inside-avoid rounded-xl overflow-hidden shadow-sm cursor-pointer group relative"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        openLightbox(index);
+                      }
+                    }}
+                    className="break-inside-avoid rounded-xl overflow-hidden shadow-sm cursor-pointer group relative bg-stone-100"
                   >
                     <img 
                       src={photo.thumbnail_url || photo.url} 
+                      alt="Matched wedding selfie"
+                      loading="lazy"
+                      decoding="async"
                       className="w-full object-cover group-hover:scale-105 transition-transform duration-500"
                       style={{ 
                         aspectRatio: photo.aspect?.replace('aspect-[', '').replace(']', '') || 'auto'
                       }}
                     />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                      <p className="text-white font-medium">View Photo</p>
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
+                      <p className="text-white font-medium text-sm">View Photo</p>
                     </div>
                   </div>
                 ))}
@@ -315,11 +346,13 @@ export default function FindPhotosPage() {
       </div>
 
       {lightboxOpen && (
-        <PhotoLightbox 
-          photos={matchedPhotos} 
-          initialIndex={currentPhotoIndex} 
-          onClose={() => setLightboxOpen(false)} 
-        />
+        <Suspense fallback={null}>
+          <PhotoLightbox 
+            photos={matchedPhotos} 
+            initialIndex={currentPhotoIndex} 
+            onClose={() => setLightboxOpen(false)} 
+          />
+        </Suspense>
       )}
     </div>
   );

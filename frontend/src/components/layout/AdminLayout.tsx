@@ -20,7 +20,7 @@ export default function AdminLayout() {
     { name: "Photos", path: "/admin/photos", icon: ImageIcon },
     { name: "Live Monitor", path: "/admin/live", icon: MonitorPlay },
     { name: "Face Recognition", path: "/admin/faces", icon: ScanFace },
-    { name: "Cloudinary Accounts", path: "/admin/cloudinary", icon: Cloud },
+    { name: "Cloudinary Storage", path: "/admin/cloudinary", icon: Cloud },
     { name: "Visitors", path: "/admin/visitors", icon: Users },
     { name: "Settings", path: "/admin/settings", icon: Settings },
   ];

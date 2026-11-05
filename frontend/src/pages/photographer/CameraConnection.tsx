@@ -18,9 +18,13 @@ export default function CameraConnection() {
   const updateFolder = async () => {
     setLoading(true);
     try {
+      const token = localStorage.getItem("photographer_token");
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Token ${token}`;
+
       const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/photographer/camera/folder/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ folder: activeFolder })
       });
       if (res.ok) {
@@ -36,9 +40,13 @@ export default function CameraConnection() {
   const connectCamera = async () => {
     setLoading(true);
     try {
+      const token = localStorage.getItem("photographer_token");
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Token ${token}`;
+
       const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/photographer/camera/connect/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           host: connectionData.host,
           port: connectionData.port,
@@ -59,8 +67,13 @@ export default function CameraConnection() {
   const disconnectCamera = async () => {
     setLoading(true);
     try {
+      const token = localStorage.getItem("photographer_token");
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Token ${token}`;
+
       const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/photographer/camera/disconnect/`, {
-        method: 'POST'
+        method: 'POST',
+        headers
       });
       if (res.ok) {
         setConnectionData(prev => ({ ...prev, status: "DISCONNECTED" }));

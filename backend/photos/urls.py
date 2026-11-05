@@ -1,5 +1,23 @@
 from django.urls import path
-from .views import CameraConnectView, CameraDisconnectView, CameraFolderView, TransferListView, PhotographerStatsView, ManualUploadView, PhoneAuthView, PhoneSyncView, PhoneUploadView, PhotoDeleteView
+from .views import (
+    CameraConnectView,
+    CameraDisconnectView,
+    CameraFolderView,
+    TransferListView,
+    PhotographerStatsView,
+    ManualUploadView,
+    PhoneAuthView,
+    PhoneSyncView,
+    PhoneUploadView,
+    PhotoDeleteView,
+    IngestionJobListView,
+    IngestionJobDetailView,
+    IngestionJobRetryView,
+    QueueMonitoringView,
+    QueueBatchRetryView,
+    CloudinaryUsageView,
+    PhotoDownloadView,
+)
 
 urlpatterns = [
     path('camera/connect/', CameraConnectView.as_view(), name='camera-connect'),
@@ -8,8 +26,15 @@ urlpatterns = [
     path('upload/', ManualUploadView.as_view(), name='manual-upload'),
     path('transfers/', TransferListView.as_view(), name='transfer-list'),
     path('stats/', PhotographerStatsView.as_view(), name='photographer-stats'),
+    path('queue/', QueueMonitoringView.as_view(), name='queue-monitoring'),
+    path('queue/retry/', QueueBatchRetryView.as_view(), name='queue-batch-retry'),
+    path('cloudinary/usage/', CloudinaryUsageView.as_view(), name='cloudinary-usage'),
+    path('photos/<int:pk>/download/', PhotoDownloadView.as_view(), name='photo-download-photographer'),
     path('phone/auth/', PhoneAuthView.as_view(), name='phone-auth'),
     path('phone/sync/', PhoneSyncView.as_view(), name='phone-sync'),
     path('phone/upload/', PhoneUploadView.as_view(), name='phone-upload'),
+    path('jobs/', IngestionJobListView.as_view(), name='job-list'),
+    path('jobs/<uuid:job_id>/', IngestionJobDetailView.as_view(), name='job-detail'),
+    path('jobs/<uuid:job_id>/retry/', IngestionJobRetryView.as_view(), name='job-retry'),
     path('<int:pk>/', PhotoDeleteView.as_view(), name='photo-delete'),
 ]

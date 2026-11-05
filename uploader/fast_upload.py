@@ -14,11 +14,12 @@ import cloudinary.uploader
 
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
-# Configure Cloudinary
+# Configure Single Cloudinary Account
 cloudinary.config(
-    cloud_name=os.environ.get('CLOUDINARY_1_CLOUD_NAME'),
-    api_key=os.environ.get('CLOUDINARY_1_API_KEY'),
-    api_secret=os.environ.get('CLOUDINARY_1_API_SECRET')
+    cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.environ.get('CLOUDINARY_API_KEY'),
+    api_secret=os.environ.get('CLOUDINARY_API_SECRET'),
+    secure=True
 )
 
 API_URL = os.environ.get('API_URL', 'http://127.0.0.1:8000/api')
@@ -33,22 +34,7 @@ def calculate_checksum(file_path):
             sha256.update(chunk)
     return sha256.hexdigest()
 
-def compress_image(file_path):
-    """Compress image to target ~1-2 MB size while preserving clarity."""
-    with Image.open(file_path) as img:
-        if img.mode in ('RGBA', 'P'):
-            img = img.convert('RGB')
-        
-        max_dim = 2560
-        if max(img.size) > max_dim:
-            ratio = max_dim / max(img.size)
-            new_size = (int(img.size[0] * ratio), int(img.size[1] * ratio))
-            img = img.resize(new_size, Image.Resampling.LANCZOS)
-        
-        import tempfile
-        tmp = tempfile.NamedTemporaryFile(suffix='.jpg', delete=False)
-        img.save(tmp.name, format='JPEG', quality=85, optimize=True)
-        return tmp.name
+from cloudinary_manager import compress_to_cloud_saver
 
 def upload_one(file_path):
     filename = os.path.basename(file_path)
@@ -71,30 +57,25 @@ def upload_one(file_path):
             except Exception as e:
                 pass # Fallback to normal upload if DB check fails
 
-        # Compress if over 2MB
-        size_mb = os.path.getsize(file_path) / (1024 * 1024)
-        if size_mb > 2:
-            tmp_path = compress_image(file_path)
-            print(f"[{filename}] Compressed {size_mb:.1f}MB -> {os.path.getsize(tmp_path)/(1024*1024):.2f}MB")
-        else:
-            tmp_path = file_path
+        # Optimize image with Cloud-Saver (~750 KB target)
+        upload_target, is_temp = compress_to_cloud_saver(file_path)
 
-        # Upload to Cloudinary
-        result = cloudinary.uploader.upload(
-            tmp_path,
-            folder='live_wedding_album',
-            resource_type='image'
-        )
-
-        if tmp_path != file_path:
-            os.unlink(tmp_path)
+        try:
+            result = cloudinary.uploader.upload(
+                upload_target,
+                folder=f"weddings/{WEDDING_SLUG}/originals",
+                resource_type='image',
+                overwrite=True
+            )
+        finally:
+            if is_temp and os.path.exists(upload_target):
+                os.remove(upload_target)
 
         secure_url = result['secure_url']
-        # Generate thumbnail URL via Cloudinary transformation
-        thumb_url = secure_url.replace('/upload/', '/upload/c_thumb,w_400,h_400/')
+        # Generate thumbnail URL via Cloudinary dynamic transformation
+        thumb_url = secure_url.replace('/upload/', '/upload/f_auto,q_auto,w_400,c_limit/')
 
         # Sync to Django
-        # checksum was already calculated at the top of the function
         photo_data = {
             "original_filename": filename,
             "cloudinary_public_id": result['public_id'],
@@ -104,6 +85,8 @@ def upload_one(file_path):
             "width": result.get('width', 0),
             "height": result.get('height', 0),
             "file_size": result.get('bytes', 0),
+            "format": result.get('format', ''),
+            "resource_type": result.get('resource_type', 'image'),
             "checksum": checksum,
             "faces": []
         }

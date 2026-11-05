@@ -12,6 +12,9 @@ https://docs.djangoproject.com/en/6.1/ref/settings/
 
 from pathlib import Path
 import os
+import sys
+import warnings
+import secrets
 import dj_database_url
 from dotenv import load_dotenv
 
@@ -25,38 +28,64 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.1/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-gq8qif6wzdswo5c@x--(iyr1_3vvax3k1_fk^&d#w_e6=ph!tu')
-
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 't')
 
-ALLOWED_HOSTS = ['live-wedding-gallery.onrender.com', 'localhost', '127.0.0.1']
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    if DEBUG:
+        SECRET_KEY = 'django-insecure-dev-only-secret-key-do-not-use-in-production'
+    else:
+        # In production, require SECRET_KEY or generate a cryptographically strong ephemeral key
+        SECRET_KEY = secrets.token_urlsafe(50)
+        warnings.warn(
+            "CRITICAL SECURITY WARNING: SECRET_KEY environment variable was not set in production! "
+            "A temporary ephemeral key was generated, but sessions/tokens will not persist across restarts.",
+            RuntimeWarning
+        )
+
+ALLOWED_HOSTS = [
+    'live-wedding-gallery.onrender.com',
+    'localhost',
+    '127.0.0.1',
+    '[::1]',
+]
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
 if DEBUG:
     ALLOWED_HOSTS.append('*')
 
 
 # Application definition
+INSTALLED_APPS = []
 
-INSTALLED_APPS = [
-    'daphne',
+# On Windows, Daphne's twisted reactor import deadlocks during CLI management commands in non-interactive consoles
+if sys.platform != 'win32' or ('runserver' in sys.argv or 'daphne' in sys.argv[0]):
+    INSTALLED_APPS.append('daphne')
+
+INSTALLED_APPS += [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
-    'channels',
-
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.postgres',
+    'channels',
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
     'weddings',
     'photos',
     'faces',
+    'observability',
 ]
 
 MIDDLEWARE = [
+    'observability.middleware.ObservabilityMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -92,42 +121,178 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.ScopedRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '120/min',
+        'user': '1000/min',
+        'face_search': '15/min',
+        'photo_upload': '120/min',
+        'photographer_login': '10/min',
+    }
 }
 ASGI_APPLICATION = 'config.asgi.application'
 
 
-# Database
-# https://docs.djangoproject.com/en/6.1/ref/settings/#databases
-
+# Database configuration optimized for NeonDB PostgreSQL with PgBouncer
 DATABASES = {
     'default': dj_database_url.config(
         default=os.environ.get('DATABASE_URL', f'sqlite:///{BASE_DIR}/db.sqlite3'),
-        conn_max_age=600,
+        conn_max_age=60,  # 60s keeps connections warm while preventing stale backends
+        conn_health_checks=True,  # Lightweight ping before reusing connection; handles Neon scale-to-zero wakeups
     )
 }
 
-# Redis cache and Celery configuration
-CELERY_BROKER_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
-CELERY_RESULT_BACKEND = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+# Neon PgBouncer transaction-mode optimizations
+if 'postgresql' in DATABASES['default'].get('ENGINE', ''):
+    DATABASES['default'].setdefault('OPTIONS', {})
+    DATABASES['default']['OPTIONS'].update({
+        'sslmode': 'require',
+        'connect_timeout': 10,
+    })
+    # Disable server-side named cursors to ensure full compatibility with PgBouncer transaction pooling
+    DATABASES['default']['DISABLE_SERVER_SIDE_CURSORS'] = True
 
-CACHES = {
-    "default": {
-        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
-    }
-}
+USE_JSON_LOGGING = os.environ.get('USE_JSON_LOGGING', 'true').lower() in ('1', 'true', 'yes')
 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{asctime}] {levelname} [{name}:{lineno}] {message}',
+            'style': '{',
+        },
+        'json': {
+            '()': 'observability.logging_formatters.StructuredJsonFormatter',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'json' if USE_JSON_LOGGING else 'verbose',
+        },
+    },
+    'loggers': {
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'WARNING',  # Set to DEBUG to inspect all SQL queries during profiling
+            'propagate': False,
+        },
+        'photos': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'weddings': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'security': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'observability': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
     },
 }
 
-# Configure CORS for GitHub Pages
+# Redis cache, Celery, and Channels configuration
+REDIS_URL = os.environ.get('REDIS_URL')
+CELERY_BROKER_URL = REDIS_URL or 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = REDIS_URL or 'redis://localhost:6379/0'
+CELERY_TASK_ACKS_LATE = True
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+
+USE_REDIS_CACHE = (
+    os.environ.get('USE_REDIS_CACHE', '').lower() in ('1', 'true', 'yes')
+    or (not DEBUG and bool(REDIS_URL) and 'localhost' not in REDIS_URL)
+)
+
+if REDIS_URL and USE_REDIS_CACHE:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": REDIS_URL,
+            "TIMEOUT": 300,
+            "KEY_PREFIX": "live_wedding",
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
+
+# Production uses Redis-backed channel layer for scalable multi-worker WebSocket broadcasts
+USE_REDIS_CHANNEL_LAYER = (
+    os.environ.get('USE_REDIS_CHANNEL_LAYER', '').lower() in ('1', 'true', 'yes')
+    or (not DEBUG and bool(REDIS_URL))
+)
+
+if REDIS_URL and (USE_REDIS_CHANNEL_LAYER or 'localhost' not in REDIS_URL):
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [REDIS_URL],
+                "capacity": 2500,  # Scaled for 500+ concurrent connections
+                "expiry": 30,      # Drop unconsumed messages after 30 seconds
+            },
+        },
+    }
+else:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer"
+        },
+    }
+
+# Configure CORS and CSRF
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOWED_ORIGINS = [
     "https://pashamdhanushreddy.github.io",
-    "http://localhost:5173", # for local vite development
+    "http://localhost:5173",  # Vite local development
+    "http://127.0.0.1:5173",
+    "https://live-wedding-gallery.onrender.com",
 ]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://pashamdhanushreddy.github.io",
+    "https://live-wedding-gallery.onrender.com",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+# Production HTTPS, Cookie and Header Security
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_HTTPONLY = True
+    CSRF_COOKIE_HTTPONLY = False  # Allows standard client-side CSRF handling where required
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    CSRF_COOKIE_SAMESITE = 'Lax'
+    SECURE_BROWSER_XSS_FILTER = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    X_FRAME_OPTIONS = 'DENY'
+    SECURE_HSTS_SECONDS = 31536000  # 1 year HSTS
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+else:
+    X_FRAME_OPTIONS = 'SAMEORIGIN'
 
 
 # Password validation
@@ -185,9 +350,20 @@ import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 
+# InsightFace Face Recognition Settings
+FACE_MODEL_NAME = os.environ.get('FACE_MODEL_NAME', 'buffalo_sc')
+FACE_MATCH_THRESHOLD = float(os.environ.get('FACE_MATCH_THRESHOLD', '0.45'))
+FACE_DETECTION_CONFIDENCE = float(os.environ.get('FACE_DETECTION_CONFIDENCE', '0.50'))
+FACE_SEARCH_MAX_RESULTS = int(os.environ.get('FACE_SEARCH_MAX_RESULTS', '150'))
+
+# Cloudinary Single Free-Account Storage Target (Optimized to fit 10,000 to 20,000 photos in 25 credits)
+CLOUDINARY_MAX_STORAGE_KB = int(os.environ.get('CLOUDINARY_MAX_STORAGE_KB', '750'))
+CLOUDINARY_MAX_DIMENSION = int(os.environ.get('CLOUDINARY_MAX_DIMENSION', '2560'))
+
 cloudinary.config(
-  cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME') or os.environ.get('CLOUDINARY_1_CLOUD_NAME', ''),
-  api_key = os.environ.get('CLOUDINARY_API_KEY') or os.environ.get('CLOUDINARY_1_API_KEY', ''),
-  api_secret = os.environ.get('CLOUDINARY_API_SECRET') or os.environ.get('CLOUDINARY_1_API_SECRET', '')
+  cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
+  api_key=os.environ.get('CLOUDINARY_API_KEY', ''),
+  api_secret=os.environ.get('CLOUDINARY_API_SECRET', ''),
+  secure=True
 )
 

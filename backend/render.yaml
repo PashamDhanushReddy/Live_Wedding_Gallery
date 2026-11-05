@@ -1,16 +1,23 @@
 services:
+  # 1. Primary ASGI Web Service (HTTP REST API + Django Channels WebSockets)
   - type: web
-    name: live-wedding-backend
-    env: python
+    name: live-wedding-web
+    runtime: python
+    region: singapore
+    plan: standard
     buildCommand: "./build.sh"
-    startCommand: "daphne config.asgi:application --port $PORT --bind 0.0.0.0"
+    startCommand: "daphne -b 0.0.0.0 -p $PORT config.asgi:application"
+    healthCheckPath: "/api/health/"
+    autoDeploy: true
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
+      - key: DEBUG
+        value: "false"
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings
       - key: DATABASE_URL
-        fromDatabase:
-          name: live-wedding-db
-          property: connectionString
+        sync: false # Set in Render Dashboard with NeonDB connection string
       - key: REDIS_URL
         fromService:
           type: redis
@@ -18,12 +25,53 @@ services:
           property: connectionString
       - key: SECRET_KEY
         generateValue: true
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: USE_REDIS_CHANNEL_LAYER
+        value: "true"
 
+  # 2. Asynchronous Celery Worker (InsightFace Face Embeddings & Ingestion)
+  - type: worker
+    name: live-wedding-worker
+    runtime: python
+    region: singapore
+    plan: standard
+    buildCommand: "./build.sh"
+    startCommand: "celery -A config worker -l info --concurrency=2 -Q live_uploads,batch_indexing,maintenance,celery"
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: DEBUG
+        value: "false"
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: live-wedding-redis
+          property: connectionString
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: live-wedding-web
+          envVarKey: SECRET_KEY
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+
+  # 3. Private Internal Redis (Django Channels + Celery Broker)
   - type: redis
     name: live-wedding-redis
-    ipAllowList: [] # only allow internal connections
-
-databases:
-  - name: live-wedding-db
-    databaseName: wedding
-    user: wedding_user
+    region: singapore
+    plan: starter
+    ipAllowList: [] # Private internal mesh only; inaccessible from public internet

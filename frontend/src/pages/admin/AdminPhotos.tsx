@@ -1,5 +1,6 @@
 import { Search, Grid, List, CheckCircle2, AlertCircle, Clock, UploadCloud, ChevronDown, MoreVertical, Eye, Image as ImageIcon } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useDebounce } from "../../hooks/useDebounce";
 
 const mockPhotos = [
   { id: "IMG_4832.JPG", date: "Nov 21, 2026 11:42 AM", size: "4.2 MB", status: "Published", url: "https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&q=80&w=400" },
@@ -14,6 +15,8 @@ const mockPhotos = [
 
 export default function AdminPhotos() {
   const [selectedPhotos, setSelectedPhotos] = useState<Set<string>>(new Set());
+  const [searchQuery, setSearchQuery] = useState("");
+  const debouncedSearch = useDebounce(searchQuery, 350);
 
   const toggleSelect = (id: string) => {
     const newSet = new Set(selectedPhotos);
@@ -21,6 +24,12 @@ export default function AdminPhotos() {
     else newSet.add(id);
     setSelectedPhotos(newSet);
   };
+
+  const filteredPhotos = useMemo(() => {
+    if (!debouncedSearch.trim()) return mockPhotos;
+    const q = debouncedSearch.toLowerCase();
+    return mockPhotos.filter(p => p.id.toLowerCase().includes(q) || p.status.toLowerCase().includes(q));
+  }, [debouncedSearch]);
 
   return (
     <div className="space-y-6 max-w-[1600px] mx-auto">
@@ -36,11 +45,11 @@ export default function AdminPhotos() {
           </div>
         </div>
         <div className="flex gap-3 w-full sm:w-auto">
-          <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white border border-border px-4 py-2 rounded-lg font-medium hover:bg-secondary transition-colors">
+          <button type="button" className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white border border-border px-4 py-2 rounded-lg font-medium hover:bg-secondary transition-colors cursor-pointer">
             <UploadCloud className="w-4 h-4" />
             Upload Photos
           </button>
-          <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors">
+          <button type="button" className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors cursor-pointer">
             Bulk Actions
             <ChevronDown className="w-4 h-4" />
           </button>
@@ -58,10 +67,13 @@ export default function AdminPhotos() {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-xl shadow-sm border border-border">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
           <input 
             type="text" 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search photos (file name, people, tags...)" 
+            aria-label="Search photos"
             className="w-full pl-9 pr-4 py-2 bg-secondary/50 border border-border rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
@@ -82,10 +94,10 @@ export default function AdminPhotos() {
             <option>Date (Oldest)</option>
           </select>
           <div className="flex items-center p-1 bg-secondary/50 border border-border rounded-lg">
-            <button className="p-1.5 bg-primary text-primary-foreground rounded-md shadow-sm">
+            <button type="button" className="p-1.5 bg-primary text-primary-foreground rounded-md shadow-sm cursor-pointer">
               <Grid className="w-4 h-4" />
             </button>
-            <button className="p-1.5 text-muted-foreground hover:text-foreground">
+            <button type="button" className="p-1.5 text-muted-foreground hover:text-foreground cursor-pointer">
               <List className="w-4 h-4" />
             </button>
           </div>
@@ -94,23 +106,30 @@ export default function AdminPhotos() {
 
       {/* Photo Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {mockPhotos.map((photo) => (
+        {filteredPhotos.map((photo) => (
           <div key={photo.id} className="bg-white rounded-xl overflow-hidden shadow-sm border border-border group">
-            <div className="relative aspect-video">
-              <img src={photo.url} alt={photo.id} className="w-full h-full object-cover" />
+            <div className="relative aspect-video bg-stone-100">
+              <img 
+                src={photo.url} 
+                alt={photo.id} 
+                loading="lazy"
+                decoding="async"
+                className="w-full h-full object-cover" 
+              />
               <div className="absolute top-2 left-2">
                 <input 
                   type="checkbox" 
                   checked={selectedPhotos.has(photo.id)}
                   onChange={() => toggleSelect(photo.id)}
-                  className="w-4 h-4 rounded text-primary focus:ring-primary"
+                  aria-label={`Select photo ${photo.id}`}
+                  className="w-4 h-4 rounded text-primary focus:ring-primary cursor-pointer"
                 />
               </div>
               <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                <button className="p-2 bg-white rounded-full hover:bg-primary hover:text-white transition-colors">
+                <button type="button" className="p-2 bg-white rounded-full hover:bg-primary hover:text-white transition-colors cursor-pointer" aria-label="View photo">
                   <Eye className="w-4 h-4" />
                 </button>
-                <button className="p-2 bg-white rounded-full hover:bg-primary hover:text-white transition-colors">
+                <button type="button" className="p-2 bg-white rounded-full hover:bg-primary hover:text-white transition-colors cursor-pointer" aria-label="More options">
                   <MoreVertical className="w-4 h-4" />
                 </button>
               </div>
@@ -118,7 +137,7 @@ export default function AdminPhotos() {
             <div className="p-4">
               <div className="flex justify-between items-start mb-2">
                 <h3 className="font-medium text-sm truncate pr-2">{photo.id}</h3>
-                <button className="text-muted-foreground hover:text-foreground">
+                <button type="button" className="text-muted-foreground hover:text-foreground cursor-pointer" aria-label="More options">
                   <MoreVertical className="w-4 h-4" />
                 </button>
               </div>

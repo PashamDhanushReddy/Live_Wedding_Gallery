@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Camera, Image as ImageIcon, AlertTriangle, HardDrive, Wifi, Server, CheckCircle2 } from "lucide-react";
+import { Camera, HardDrive, Wifi, Server, CheckCircle2 } from "lucide-react";
 import { API_BASE_URL, WEDDING_SLUG } from "../../config";
 
 export default function PhotographerDashboard() {
@@ -16,7 +16,9 @@ export default function PhotographerDashboard() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/photographer/stats/`);
+        const token = localStorage.getItem("photographer_token");
+        const headers: Record<string, string> = token ? { "Authorization": `Token ${token}` } : {};
+        const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/photographer/stats/`, { headers });
         if (res.ok) {
           const data = await res.json();
           setStats(data);

@@ -16,7 +16,7 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
         
-    if 'runserver' in sys.argv and os.environ.get('RUN_MAIN') != 'true':
+    if 'runserver' in sys.argv and os.environ.get('RUN_MAIN') != 'true' and os.environ.get('ENABLE_WATCHER', 'false').lower() in ('true', '1'):
         import subprocess
         import atexit
         
