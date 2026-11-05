@@ -69,10 +69,14 @@ class WeddingGalleryConsumer(AsyncWebsocketConsumer):
 
         # Strictly subscribe only to this verified wedding's room group
         self.room_group_name = f'wedding_{self.wedding_slug}'
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
+        if self.channel_layer:
+            try:
+                await self.channel_layer.group_add(
+                    self.room_group_name,
+                    self.channel_name
+                )
+            except Exception as e:
+                logger.error(f"Failed to join channel group {self.room_group_name}: {e}")
         await self.accept()
 
         # Send connection acknowledgment with protocol details
@@ -90,11 +94,14 @@ class WeddingGalleryConsumer(AsyncWebsocketConsumer):
         logger.info(f"WebSocket connected: wedding={self.wedding_slug}, channel={self.channel_name}")
 
     async def disconnect(self, close_code):
-        if hasattr(self, 'room_group_name'):
-            await self.channel_layer.group_discard(
-                self.room_group_name,
-                self.channel_name
-            )
+        if hasattr(self, 'room_group_name') and self.channel_layer:
+            try:
+                await self.channel_layer.group_discard(
+                    self.room_group_name,
+                    self.channel_name
+                )
+            except Exception as e:
+                logger.warning(f"Error discarding channel group {self.room_group_name}: {e}")
             try:
                 from observability.metrics import metrics
                 metrics.record_ws_disconnect(close_code or 1000)

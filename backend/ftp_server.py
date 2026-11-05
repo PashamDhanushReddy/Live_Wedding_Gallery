@@ -201,15 +201,19 @@ class WeddingFTPHandler(FTPHandler):
                 pass
 
     def broadcast_transfer(self, slug, transfer):
-        channel_layer = get_channel_layer()
-        transfer_data = TransferSerializer(transfer).data
-        async_to_sync(channel_layer.group_send)(
-            f'wedding_{slug}',
-            {
-                'type': 'transfer_update',
-                'transfer': transfer_data
-            }
-        )
+        try:
+            channel_layer = get_channel_layer()
+            if channel_layer:
+                transfer_data = TransferSerializer(transfer).data
+                async_to_sync(channel_layer.group_send)(
+                    f'wedding_{slug}',
+                    {
+                        'type': 'transfer_update',
+                        'transfer': transfer_data
+                    }
+                )
+        except Exception as e:
+            logger.warning(f"Failed to broadcast transfer: {e}")
 
     def extract_faces(self, photo, file_path):
         try:

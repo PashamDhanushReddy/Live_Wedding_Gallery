@@ -214,12 +214,24 @@ CELERY_TASK_REJECT_ON_WORKER_LOST = True
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
-USE_REDIS_CACHE = (
-    os.environ.get('USE_REDIS_CACHE', '').lower() in ('1', 'true', 'yes')
-    or (not DEBUG and bool(REDIS_URL) and 'localhost' not in REDIS_URL)
-)
+# Helper to determine if REDIS_URL points to a local address (not reachable in cloud web containers)
+is_local_redis = any(h in (REDIS_URL or '').lower() for h in ('localhost', '127.0.0.1', '::1'))
 
-if REDIS_URL and USE_REDIS_CACHE:
+# Redis Cache configuration:
+# Only use Redis cache if REDIS_URL is provided AND it is either remote or explicitly configured in debug mode.
+use_redis_cache_env = os.environ.get('USE_REDIS_CACHE', '').lower()
+if use_redis_cache_env in ('0', 'false', 'no'):
+    ENABLE_REDIS_CACHE = False
+elif not REDIS_URL:
+    ENABLE_REDIS_CACHE = False
+elif not DEBUG and is_local_redis:
+    ENABLE_REDIS_CACHE = False
+elif use_redis_cache_env in ('1', 'true', 'yes'):
+    ENABLE_REDIS_CACHE = True
+else:
+    ENABLE_REDIS_CACHE = not is_local_redis
+
+if ENABLE_REDIS_CACHE:
     CACHES = {
         "default": {
             "BACKEND": "django.core.cache.backends.redis.RedisCache",
@@ -235,13 +247,24 @@ else:
         }
     }
 
-# Production uses Redis-backed channel layer for scalable multi-worker WebSocket broadcasts
-USE_REDIS_CHANNEL_LAYER = (
-    os.environ.get('USE_REDIS_CHANNEL_LAYER', '').lower() in ('1', 'true', 'yes')
-    or (not DEBUG and bool(REDIS_URL))
-)
+# Channels Channel Layer configuration:
+# For production WebSocket broadcast:
+# - Uses RedisChannelLayer when a valid remote Redis instance (e.g. Render Redis, Upstash, Redis Cloud) is available.
+# - Gracefully falls back to InMemoryChannelLayer if REDIS_URL is missing, disabled, or points to localhost in production.
+use_redis_channel_env = os.environ.get('USE_REDIS_CHANNEL_LAYER', '').lower()
+if use_redis_channel_env in ('0', 'false', 'no'):
+    ENABLE_REDIS_CHANNEL_LAYER = False
+elif not REDIS_URL:
+    ENABLE_REDIS_CHANNEL_LAYER = False
+elif not DEBUG and is_local_redis:
+    # In cloud production containers (Render), localhost:6379 does not exist. Fall back to InMemoryChannelLayer.
+    ENABLE_REDIS_CHANNEL_LAYER = False
+elif use_redis_channel_env in ('1', 'true', 'yes'):
+    ENABLE_REDIS_CHANNEL_LAYER = True
+else:
+    ENABLE_REDIS_CHANNEL_LAYER = not is_local_redis
 
-if REDIS_URL and (USE_REDIS_CHANNEL_LAYER or 'localhost' not in REDIS_URL):
+if ENABLE_REDIS_CHANNEL_LAYER:
     CHANNEL_LAYERS = {
         "default": {
             "BACKEND": "channels_redis.core.RedisChannelLayer",
