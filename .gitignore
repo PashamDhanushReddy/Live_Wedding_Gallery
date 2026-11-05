@@ -14,3 +14,7 @@ backend/media/
 backend/backups/
 *.json.gz
 *.sha256
+.idea/
+.gradle/
+**/build/
+local.properties
