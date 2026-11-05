@@ -71,6 +71,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        tvStorageInfo.setOnClickListener {
+            val freed = StorageMonitor.performSafeCleanup(this, forceDueToLowStorage = true)
+            updateQueueStats()
+            Toast.makeText(this, "Storage Auto-Cleaned! Cleaned $freed items.", Toast.LENGTH_SHORT).show()
+        }
+
         refreshIpAddress()
     }
 

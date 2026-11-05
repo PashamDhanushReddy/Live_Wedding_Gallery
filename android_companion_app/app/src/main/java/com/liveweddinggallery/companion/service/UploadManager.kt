@@ -61,9 +61,9 @@ object UploadManager {
                     // 2. Dispatch pending uploads with bounded concurrency
                     processPendingQueue(appContext)
 
-                    // 3. Periodic safe cleanup (every 10 minutes)
+                    // 3. Periodic safe cleanup (every 60 seconds)
                     val now = System.currentTimeMillis()
-                    if (now - lastCleanupTime > 10 * 60 * 1000L) {
+                    if (now - lastCleanupTime > 60 * 1000L) {
                         lastCleanupTime = now
                         StorageMonitor.performSafeCleanup(appContext, forceDueToLowStorage = false)
                     }
@@ -349,15 +349,21 @@ object UploadManager {
 
             val responseCode = connection.responseCode
             if (responseCode in 200..299) {
-                // Mark FORWARDED in SQLite database.
-                // DO NOT DELETE FILE IMMEDIATELY! It remains safe in ready_photos until safe retention purge.
                 db.markForwarded(item.uploadId)
+                // Automatically delete local file upon verified upload to keep tablet storage permanently clean
+                try {
+                    if (file.exists()) {
+                        file.delete()
+                    }
+                    db.markPurged(item.uploadId)
+                } catch (_: Exception) {}
+
                 CompanionLogger.i(
                     event = "HTTP_FORWARD_SUCCESS",
                     uploadId = item.uploadId,
                     filename = item.originalName,
                     status = "FORWARDED",
-                    details = "HTTP $responseCode: Photo safely forwarded to Django"
+                    details = "HTTP $responseCode: Photo safely forwarded & local file auto-purged"
                 )
             } else {
                 val errorStreamText = connection.errorStream?.bufferedReader()?.use { it.readText() } ?: "No response body"
