@@ -26,6 +26,7 @@ class Photo(models.Model):
     upload_status = models.CharField(max_length=20, default='PENDING')
     thumbnail_url = models.URLField(max_length=500, blank=True, null=True)
     folder = models.CharField(max_length=100, default='Uncategorized')
+    ai_category = models.CharField(max_length=50, blank=True, null=True, db_index=True)
     checksum = models.CharField(max_length=64, blank=True, null=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -36,6 +37,8 @@ class Photo(models.Model):
             models.Index(fields=['wedding', 'processing_status']),
             models.Index(fields=['wedding', 'processing_status', '-created_at', '-id']),
             models.Index(fields=['wedding', 'folder', 'processing_status', '-created_at', '-id']),
+            models.Index(fields=['wedding', 'ai_category', 'processing_status', '-created_at', '-id']),
+            models.Index(fields=['wedding', 'ai_category', '-created_at']),
             models.Index(fields=['wedding', '-created_at', '-id']),
             models.Index(fields=['wedding', 'processing_status', '-created_at']),
             models.Index(fields=['wedding', 'folder', '-created_at']),

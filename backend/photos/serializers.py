@@ -15,7 +15,7 @@ class PhotoSerializer(serializers.ModelSerializer):
             'cloudinary_public_id', 'cloudinary_url', 'secure_url',
             'thumbnail_url', 'preview_url', 'large_preview_url', 'download_url',
             'width', 'height', 'file_size', 'format', 'resource_type',
-            'folder', 'checksum', 'processing_status', 'captured_at', 'created_at'
+            'folder', 'ai_category', 'checksum', 'processing_status', 'captured_at', 'created_at'
         ]
 
     def get_thumbnail_url(self, obj):
@@ -60,6 +60,7 @@ class GalleryPhotoSerializer(serializers.ModelSerializer):
             'width',
             'height',
             'folder',
+            'ai_category',
             'captured_at',
             'created_at'
         ]

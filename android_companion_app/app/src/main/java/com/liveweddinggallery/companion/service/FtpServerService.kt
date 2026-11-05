@@ -155,14 +155,21 @@ class FtpServerService : Service() {
             serverFactory.connectionConfig = connConfig
 
             // 2. Configure Passive Data Connections
-            // DO NOT bind passiveAddress or passiveExternalAddress to a static IP string.
-            // Leaving them null allows Apache FtpServer to dynamically bind each passive data connection
-            // to the exact incoming serverControlAddress of the client session.
-            // This completely avoids EADDRNOTAVAIL ("Cannot assign requested address") and 425 errors
-            // when Wi-Fi DHCP updates the IP or when switching to a mobile hotspot.
+            // Wrap in dynamic DataConnectionConfiguration so getPassiveAddress() returns null
+            // (binding ServerSocket to 0.0.0.0 to prevent EADDRNOTAVAIL) while getPassiveExernalAddress()
+            // dynamically returns the current active Wi-Fi/Hotspot IP so Windows Explorer and cameras
+            // never receive 0.0.0.0 in PASV responses.
             val dataConnFactory = DataConnectionConfigurationFactory().apply {
                 passivePorts = PASSIVE_PORTS
                 idleTime = 300
+            }
+            val baseDataConfig = dataConnFactory.createDataConnectionConfiguration()
+            val dynamicDataConfig = object : org.apache.ftpserver.DataConnectionConfiguration by baseDataConfig {
+                override fun getPassiveAddress(): String? = null
+                override fun getPassiveExernalAddress(): String {
+                    val currentIp = NetworkUtils.getActiveWifiOrHotspotIp()
+                    return if (currentIp.isNotEmpty()) currentIp else "127.0.0.1"
+                }
             }
 
             // 3. Attach crash-proof AndroidNioListener
@@ -171,7 +178,7 @@ class FtpServerService : Service() {
                 port = FTP_PORT,
                 implicitSsl = false,
                 sslConfiguration = null,
-                dataConnectionConfig = dataConnFactory.createDataConnectionConfiguration(),
+                dataConnectionConfig = dynamicDataConfig,
                 idleTimeout = 300,
                 sessionFilter = null
             )

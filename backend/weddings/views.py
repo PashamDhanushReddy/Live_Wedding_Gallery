@@ -122,11 +122,23 @@ class WeddingPhotosView(generics.ListAPIView):
             f_norm = folder.strip()
             f_space = f_norm.replace('_', ' ')
             f_under = f_norm.replace(' ', '_')
-            qs = qs.filter(
-                models.Q(folder__iexact=f_norm) |
-                models.Q(folder__iexact=f_space) |
-                models.Q(folder__iexact=f_under)
-            )
+            if f_norm.lower() in ['bride', 'groom', 'bride and groom']:
+                # Person filter: match photos assigned to this AI face tag or explicit folder
+                qs = qs.filter(
+                    models.Q(folder__iexact=f_norm) |
+                    models.Q(folder__iexact=f_space) |
+                    models.Q(folder__iexact=f_under) |
+                    models.Q(ai_category__iexact=f_norm) |
+                    models.Q(ai_category__iexact=f_space) |
+                    models.Q(ai_category__iexact=f_under)
+                )
+            else:
+                # Event folder filter: matches photos uploaded to this event folder (Haldi, Wedding Day, etc.)
+                qs = qs.filter(
+                    models.Q(folder__iexact=f_norm) |
+                    models.Q(folder__iexact=f_space) |
+                    models.Q(folder__iexact=f_under)
+                )
             
         # 2. Exact date filter (YYYY-MM-DD) or date range
         date_param = self.request.query_params.get('date')

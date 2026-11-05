@@ -18,7 +18,8 @@ def cosine_distance(vec1, vec2):
 def categorize_photo(photo):
     """
     Categorize a photo based on its faces and the wedding's reference embeddings.
-    Updates the photo.folder field and saves the photo if categorized.
+    Updates the photo.ai_category field (and photo.folder only if unassigned).
+    Preserves photographer-assigned event folders (Haldi, Wedding Day, etc.).
     """
     wedding = photo.wedding
     bride_embedding = wedding.bride_embedding
@@ -66,24 +67,43 @@ def categorize_photo(photo):
             if dist_groom < THRESHOLD:
                 has_groom = True
                 
-    # Determine the folder based on matches and PROMINENT face counts
-    new_folder = None
+    # Determine the AI category based on matches and PROMINENT face counts
+    new_ai_category = None
     if has_bride and has_groom and total_prominent == 2:
-        new_folder = "Bride and Groom"
+        new_ai_category = "Bride and Groom"
     elif has_bride and not has_groom and total_prominent == 1:
-        new_folder = "Bride"
+        new_ai_category = "Bride"
     elif has_groom and not has_bride and total_prominent == 1:
-        new_folder = "Groom"
+        new_ai_category = "Groom"
         
-    # If the photo was in an AI folder but no longer matches, clear the folder
-    if new_folder is None and photo.folder in ["Bride", "Groom", "Bride and Groom"]:
-        photo.folder = ""
-        photo.save(update_fields=['folder'])
-        return True
-        
-    if new_folder and photo.folder != new_folder:
-        photo.folder = new_folder
-        photo.save(update_fields=['folder'])
+    changed = False
+    update_fields = []
+
+    # 1. Update ai_category
+    current_ai_cat = getattr(photo, 'ai_category', None)
+    if current_ai_cat != new_ai_category:
+        photo.ai_category = new_ai_category
+        changed = True
+        update_fields.append('ai_category')
+
+    # 2. Update folder:
+    # If photo already belongs to an event folder (Haldi, Wedding Day, Pre-wedding Shoot, etc.),
+    # NEVER overwrite it! Keep the photographer's explicit folder assignment intact.
+    # Only assign AI folder if the folder is empty, "Uncategorized", or was previously an AI category.
+    is_event_folder = bool(
+        photo.folder and photo.folder.strip() not in [
+            "Bride", "Groom", "Bride and Groom", "Uncategorized", ""
+        ]
+    )
+    if not is_event_folder:
+        target_folder = new_ai_category or "Uncategorized"
+        if photo.folder != target_folder:
+            photo.folder = target_folder
+            changed = True
+            update_fields.append('folder')
+
+    if changed and update_fields:
+        photo.save(update_fields=update_fields)
         return True
         
     return False
