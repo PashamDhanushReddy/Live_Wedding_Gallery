@@ -61,6 +61,16 @@ class MainActivity : AppCompatActivity() {
         findViewById<TextView>(R.id.tvFtpCredentials)?.text = 
             "Port: ${FtpServerService.FTP_PORT}  |  User: $ftpUser  |  Pass: $ftpPass"
 
+        tvIpAddress.setOnClickListener {
+            val address = tvIpAddress.text.toString()
+            if (address.startsWith("ftp://")) {
+                val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as? android.content.ClipboardManager
+                val clip = android.content.ClipData.newPlainText("FTP Address", address)
+                clipboard?.setPrimaryClip(clip)
+                Toast.makeText(this, "Copied to clipboard: $address", Toast.LENGTH_SHORT).show()
+            }
+        }
+
         refreshIpAddress()
     }
 
@@ -143,7 +153,7 @@ class MainActivity : AppCompatActivity() {
     private fun refreshIpAddress() {
         val ip = NetworkUtils.getActiveWifiOrHotspotIp()
         if (ip.isNotEmpty()) {
-            tvIpAddress.text = ip
+            tvIpAddress.text = "ftp://$ip:${FtpServerService.FTP_PORT}"
         } else {
             tvIpAddress.text = "Connect Wi-Fi / Hotspot"
         }
@@ -152,6 +162,7 @@ class MainActivity : AppCompatActivity() {
     private fun startPeriodicUiUpdater() {
         lifecycleScope.launch {
             while (isActive) {
+                refreshIpAddress()
                 updateQueueStats()
                 delay(2000)
             }
