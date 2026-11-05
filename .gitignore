@@ -18,3 +18,4 @@ backend/backups/
 .gradle/
 **/build/
 local.properties
+*.apk
