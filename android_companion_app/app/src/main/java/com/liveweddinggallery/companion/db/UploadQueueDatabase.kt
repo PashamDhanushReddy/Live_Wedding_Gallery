@@ -84,6 +84,71 @@ class UploadQueueDatabase private constructor(context: Context) :
         // Future schema migrations
     }
 
+    override fun onOpen(db: SQLiteDatabase) {
+        super.onOpen(db)
+        try {
+            db.execSQL(
+                """
+                DELETE FROM $TABLE_NAME 
+                WHERE status != '$STATUS_FORWARDED' 
+                  AND (
+                      checksum_sha256 IN (SELECT checksum_sha256 FROM $TABLE_NAME WHERE status = '$STATUS_FORWARDED')
+                      OR original_name IN (SELECT original_name FROM $TABLE_NAME WHERE status = '$STATUS_FORWARDED')
+                  )
+                """.trimIndent()
+            )
+            db.execSQL(
+                """
+                DELETE FROM $TABLE_NAME 
+                WHERE status = '$STATUS_FORWARDED'
+                  AND id NOT IN (
+                      SELECT MAX(id) FROM $TABLE_NAME WHERE status = '$STATUS_FORWARDED' GROUP BY checksum_sha256
+                  )
+                """.trimIndent()
+            )
+        } catch (_: Exception) {}
+    }
+
+    @Synchronized
+    fun cleanupStaleAndDuplicateRows() {
+        val db = writableDatabase
+        try {
+            // 1. Delete any FAILED, PENDING, or UPLOADING rows if the same checksum or filename is already FORWARDED
+            db.execSQL(
+                """
+                DELETE FROM $TABLE_NAME 
+                WHERE status != '$STATUS_FORWARDED' 
+                  AND (
+                      checksum_sha256 IN (SELECT checksum_sha256 FROM $TABLE_NAME WHERE status = '$STATUS_FORWARDED')
+                      OR original_name IN (SELECT original_name FROM $TABLE_NAME WHERE status = '$STATUS_FORWARDED')
+                  )
+                """.trimIndent()
+            )
+
+            // 2. Delete duplicate FORWARDED rows keeping only the latest id per checksum
+            db.execSQL(
+                """
+                DELETE FROM $TABLE_NAME 
+                WHERE status = '$STATUS_FORWARDED'
+                  AND id NOT IN (
+                      SELECT MAX(id) FROM $TABLE_NAME WHERE status = '$STATUS_FORWARDED' GROUP BY checksum_sha256
+                  )
+                """.trimIndent()
+            )
+
+            // 3. Delete duplicate FAILED rows keeping only the latest id per checksum
+            db.execSQL(
+                """
+                DELETE FROM $TABLE_NAME 
+                WHERE status = '$STATUS_FAILED'
+                  AND id NOT IN (
+                      SELECT MAX(id) FROM $TABLE_NAME WHERE status = '$STATUS_FAILED' GROUP BY checksum_sha256
+                  )
+                """.trimIndent()
+            )
+        } catch (_: Exception) {}
+    }
+
     @Synchronized
     fun enqueue(
         uploadId: String,
@@ -94,6 +159,41 @@ class UploadQueueDatabase private constructor(context: Context) :
         folder: String
     ): Boolean {
         val db = writableDatabase
+
+        // 1. Check if this photo (by checksum or original_name) is already tracked
+        val checkCursor = db.rawQuery(
+            "SELECT status FROM $TABLE_NAME WHERE checksum_sha256 = ? OR original_name = ? ORDER BY id DESC LIMIT 1",
+            arrayOf(checksumSha256, originalName)
+        )
+        if (checkCursor.moveToFirst()) {
+            val existingStatus = checkCursor.getString(0)
+            checkCursor.close()
+
+            // If already completed or currently in-flight, do not duplicate
+            if (existingStatus == STATUS_FORWARDED || existingStatus == STATUS_PURGED ||
+                existingStatus == STATUS_UPLOADING || existingStatus == STATUS_PENDING) {
+                return false
+            }
+
+            // If previously failed, recycle the existing row instead of adding duplicate records
+            val updateValues = ContentValues().apply {
+                put("upload_id", uploadId)
+                put("original_name", originalName)
+                put("file_path", filePath)
+                put("file_size", fileSize)
+                put("checksum_sha256", checksumSha256)
+                put("folder", folder)
+                put("status", STATUS_PENDING)
+                put("attempts", 0)
+                put("next_retry_at", 0L)
+                putNull("last_error")
+                put("created_at", System.currentTimeMillis())
+            }
+            db.update(TABLE_NAME, updateValues, "checksum_sha256 = ? OR original_name = ?", arrayOf(checksumSha256, originalName))
+            return true
+        }
+        checkCursor.close()
+
         val values = ContentValues().apply {
             put("upload_id", uploadId)
             put("original_name", originalName)
@@ -164,6 +264,7 @@ class UploadQueueDatabase private constructor(context: Context) :
             putNull("last_error")
         }
         db.update(TABLE_NAME, values, "upload_id = ?", arrayOf(uploadId))
+        cleanupStaleAndDuplicateRows()
     }
 
     @Synchronized
@@ -204,6 +305,7 @@ class UploadQueueDatabase private constructor(context: Context) :
     @Synchronized
     fun resetStuckUploadingToPending(): Int {
         val db = writableDatabase
+        cleanupStaleAndDuplicateRows()
         val values = ContentValues().apply {
             put("status", STATUS_PENDING)
             put("next_retry_at", 0L)
@@ -214,10 +316,12 @@ class UploadQueueDatabase private constructor(context: Context) :
     @Synchronized
     fun retryAllFailed(): Int {
         val db = writableDatabase
+        cleanupStaleAndDuplicateRows()
         val values = ContentValues().apply {
             put("status", STATUS_PENDING)
             put("next_retry_at", 0L)
             put("attempts", 0)
+            putNull("last_error")
         }
         return db.update(TABLE_NAME, values, "status = ?", arrayOf(STATUS_FAILED))
     }
@@ -252,28 +356,38 @@ class UploadQueueDatabase private constructor(context: Context) :
         var failed = 0
         var total = 0
 
+        // Deduplicate stats per unique photo (checksum_sha256).
+        // If a photo was ever FORWARDED, it always counts as FORWARDED, never FAILED.
         val cursor = db.rawQuery(
             """
-            SELECT status, COUNT(*)
+            SELECT 
+                CASE 
+                    WHEN MAX(CASE status WHEN '$STATUS_FORWARDED' THEN 4 WHEN '$STATUS_UPLOADING' THEN 3 WHEN '$STATUS_PENDING' THEN 2 WHEN '$STATUS_FAILED' THEN 1 ELSE 0 END) = 4 THEN '$STATUS_FORWARDED'
+                    WHEN MAX(CASE status WHEN '$STATUS_FORWARDED' THEN 4 WHEN '$STATUS_UPLOADING' THEN 3 WHEN '$STATUS_PENDING' THEN 2 WHEN '$STATUS_FAILED' THEN 1 ELSE 0 END) = 3 THEN '$STATUS_UPLOADING'
+                    WHEN MAX(CASE status WHEN '$STATUS_FORWARDED' THEN 4 WHEN '$STATUS_UPLOADING' THEN 3 WHEN '$STATUS_PENDING' THEN 2 WHEN '$STATUS_FAILED' THEN 1 ELSE 0 END) = 2 THEN '$STATUS_PENDING'
+                    WHEN MAX(CASE status WHEN '$STATUS_FORWARDED' THEN 4 WHEN '$STATUS_UPLOADING' THEN 3 WHEN '$STATUS_PENDING' THEN 2 WHEN '$STATUS_FAILED' THEN 1 ELSE 0 END) = 1 THEN '$STATUS_FAILED'
+                    ELSE '$STATUS_PURGED'
+                END as effective_status,
+                COUNT(*)
             FROM $TABLE_NAME
             WHERE status != '$STATUS_PURGED'
-            GROUP BY status
+            GROUP BY checksum_sha256
             """.trimIndent(),
             null
         )
 
+        val statusCounts = mutableMapOf<String, Int>()
         while (cursor.moveToNext()) {
             val status = cursor.getString(0)
-            val count = cursor.getInt(1)
-            total += count
-            when (status) {
-                STATUS_PENDING -> pending = count
-                STATUS_UPLOADING -> uploading = count
-                STATUS_FORWARDED -> forwarded = count
-                STATUS_FAILED -> failed = count
-            }
+            statusCounts[status] = (statusCounts[status] ?: 0) + 1
+            total++
         }
         cursor.close()
+
+        pending = statusCounts[STATUS_PENDING] ?: 0
+        uploading = statusCounts[STATUS_UPLOADING] ?: 0
+        forwarded = statusCounts[STATUS_FORWARDED] ?: 0
+        failed = statusCounts[STATUS_FAILED] ?: 0
 
         return QueueStats(
             pendingCount = pending,

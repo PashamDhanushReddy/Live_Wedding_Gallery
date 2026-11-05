@@ -154,15 +154,15 @@ class FtpServerService : Service() {
             }.createConnectionConfig()
             serverFactory.connectionConfig = connConfig
 
-            // 2. Configure Passive Data Connections with Device's Local IP
-            val localIp = NetworkUtils.getActiveWifiOrHotspotIp()
+            // 2. Configure Passive Data Connections
+            // DO NOT bind passiveAddress or passiveExternalAddress to a static IP string.
+            // Leaving them null allows Apache FtpServer to dynamically bind each passive data connection
+            // to the exact incoming serverControlAddress of the client session.
+            // This completely avoids EADDRNOTAVAIL ("Cannot assign requested address") and 425 errors
+            // when Wi-Fi DHCP updates the IP or when switching to a mobile hotspot.
             val dataConnFactory = DataConnectionConfigurationFactory().apply {
                 passivePorts = PASSIVE_PORTS
                 idleTime = 300
-                if (localIp.isNotEmpty()) {
-                    passiveExternalAddress = localIp
-                    passiveAddress = localIp
-                }
             }
 
             // 3. Attach crash-proof AndroidNioListener
