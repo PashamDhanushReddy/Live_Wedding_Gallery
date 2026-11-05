@@ -4,6 +4,7 @@ import android.content.Context
 import com.liveweddinggallery.companion.db.UploadQueueDatabase
 import com.liveweddinggallery.companion.util.CompanionLogger
 import com.liveweddinggallery.companion.util.FileIntegrityValidator
+import com.liveweddinggallery.companion.util.ImageOptimizer
 import com.liveweddinggallery.companion.util.StorageMonitor
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
@@ -259,13 +260,18 @@ object UploadManager {
             return
         }
 
+        // Optimize photo on-device (Quad-HD 2560px, ~600KB) to save 96% bandwidth and prevent cloud OOM
+        val uploadFile = ImageOptimizer.getOptimizedFile(file, item.uploadId, context)
+        val isTempOptimized = uploadFile.absolutePath != file.absolutePath
+        val uploadChecksum = if (isTempOptimized) FileIntegrityValidator.calculateSha256(uploadFile) else item.checksumSha256
+
         db.markUploading(item.uploadId)
         CompanionLogger.i(
             event = "HTTP_FORWARD_START",
             uploadId = item.uploadId,
             filename = item.originalName,
             status = "UPLOADING",
-            details = "Attempt ${item.attempts + 1}/5, Streaming ${file.length() / 1024} KB to backend"
+            details = "Attempt ${item.attempts + 1}/5, Streaming ${uploadFile.length() / 1024} KB to backend"
         )
 
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -320,14 +326,14 @@ object UploadManager {
                 // 4. checksum
                 outputStream.writeBytes(twoHyphens + boundary + lineEnd)
                 outputStream.writeBytes("Content-Disposition: form-data; name=\"checksum\"$lineEnd$lineEnd")
-                outputStream.writeBytes("${item.checksumSha256}$lineEnd")
+                outputStream.writeBytes("$uploadChecksum$lineEnd")
 
-                // 5. photo file (STREAMED DIRECTLY FROM DISK - Zero Bitmap Allocation)
+                // 5. photo file (STREAMED DIRECTLY FROM OPTIMIZED DISK FILE)
                 outputStream.writeBytes(twoHyphens + boundary + lineEnd)
                 outputStream.writeBytes("Content-Disposition: form-data; name=\"photo\"; filename=\"${item.originalName}\"$lineEnd")
                 outputStream.writeBytes("Content-Type: image/jpeg$lineEnd$lineEnd")
 
-                FileInputStream(file).use { fis ->
+                FileInputStream(uploadFile).use { fis ->
                     val buffer = ByteArray(64 * 1024)
                     var bytesRead = fis.read(buffer)
                     while (bytesRead != -1) {
@@ -364,6 +370,9 @@ object UploadManager {
             handleUploadFailure(db, item, errorMsg, e)
         } finally {
             connection?.disconnect()
+            if (isTempOptimized && uploadFile.exists()) {
+                uploadFile.delete()
+            }
         }
     }
 

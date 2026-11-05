@@ -220,6 +220,12 @@ def compress_image_to_target(
     import tempfile
 
     with Image.open(file_path) as im:
+        # Pre-downscale in libjpeg DCT decoder for massive memory & CPU savings on large camera files
+        try:
+            im.draft('RGB', (target_dim, target_dim))
+        except Exception:
+            pass
+
         im = ImageOps.exif_transpose(im)
         if im.mode != 'RGB':
             im = im.convert('RGB')
@@ -230,14 +236,14 @@ def compress_image_to_target(
         # Maintain high resolution (up to 2560px Quad-HD is pin-sharp on retina screens)
         if max_dim_actual > target_dim:
             scale_ratio = target_dim / max_dim_actual
-            im = im.resize((int(orig_w * scale_ratio), int(orig_h * scale_ratio)), Image.Resampling.LANCZOS)
+            im = im.resize((int(orig_w * scale_ratio), int(orig_h * scale_ratio)), Image.Resampling.BILINEAR)
 
         # Iterative quality selection to land within target byte budget
         best_data = None
         best_q = 84
-        for q in [86, 82, 78, 74, 70]:
+        for q in [84, 80, 75, 70]:
             buf = io.BytesIO()
-            im.save(buf, format='JPEG', quality=q, optimize=True, progressive=True)
+            im.save(buf, format='JPEG', quality=q, optimize=True)
             data = buf.getvalue()
             cur_size = len(data)
             best_data = data
@@ -248,9 +254,9 @@ def compress_image_to_target(
         # If high-entropy photo is still above budget, scale to 2048px (2K)
         if len(best_data) > max_bytes and max(im.size) > 2048:
             scale_ratio = 2048 / max(im.size)
-            im = im.resize((int(im.size[0] * scale_ratio), int(im.size[1] * scale_ratio)), Image.Resampling.LANCZOS)
+            im = im.resize((int(im.size[0] * scale_ratio), int(im.size[1] * scale_ratio)), Image.Resampling.BILINEAR)
             buf = io.BytesIO()
-            im.save(buf, format='JPEG', quality=80, optimize=True, progressive=True)
+            im.save(buf, format='JPEG', quality=75, optimize=True)
             best_data = buf.getvalue()
 
         # Write to temporary file for upload streaming

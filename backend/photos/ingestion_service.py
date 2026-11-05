@@ -27,8 +27,9 @@ from faces.models import Face
 
 logger = logging.getLogger(__name__)
 
-# High-concurrency background worker thread pool for local dev and direct ingestion
-_ingestion_executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+# Background worker thread pool (restricted to 2 workers to fit 512MB RAM budget)
+_max_workers = 2 if os.environ.get('RENDER') or not settings.DEBUG else 4
+_ingestion_executor = concurrent.futures.ThreadPoolExecutor(max_workers=_max_workers)
 
 # Global lock for InsightFace inference
 _face_app = None

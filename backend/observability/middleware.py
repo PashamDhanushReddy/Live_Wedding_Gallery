@@ -22,9 +22,81 @@ logger = logging.getLogger('observability.access')
 
 class ObservabilityMiddleware:
     """HTTP middleware capturing latencies, error distributions, and correlation IDs."""
+    async_capable = True
+    sync_capable = True
 
     def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]):
         self.get_response = get_response
+        import asyncio
+        self._is_async = asyncio.iscoroutinefunction(get_response)
+
+    async def __acall__(self, request: HttpRequest) -> HttpResponse:
+        import asyncio
+        start_time = time.perf_counter()
+
+        correlation_id = (
+            request.headers.get('X-Correlation-ID') or
+            request.headers.get('X-Request-ID') or
+            request.headers.get('X-Upload-ID') or
+            uuid.uuid4().hex
+        )
+        set_correlation_id(correlation_id)
+
+        upload_id = request.headers.get('X-Upload-ID')
+        if not upload_id and request.method == 'POST':
+            upload_id = getattr(request, 'POST', {}).get('upload_id')
+        if upload_id:
+            set_upload_id(str(upload_id))
+
+        path_parts = request.path.strip('/').split('/')
+        if len(path_parts) >= 3 and path_parts[0] == 'api' and path_parts[1] == 'weddings':
+            set_wedding_slug(path_parts[2])
+
+        try:
+            response = await self.get_response(request)
+        except asyncio.CancelledError:
+            clear_context()
+            raise
+        except Exception as exc:
+            duration_ms = (time.perf_counter() - start_time) * 1000.0
+            metrics.record_request(500, duration_ms)
+            logger.error(
+                f"Unhandled 500 exception during request {request.method} {request.path}: {exc}",
+                exc_info=True,
+                extra={'event': 'HTTP_UNHANDLED_EXCEPTION', 'correlation_id': correlation_id}
+            )
+            clear_context()
+            raise
+
+        duration_ms = (time.perf_counter() - start_time) * 1000.0
+        metrics.record_request(response.status_code, duration_ms)
+        response['X-Correlation-ID'] = correlation_id
+
+        if not request.path.startswith('/static/') and not request.path == '/api/health/' and not request.path == '/':
+            log_level = logging.INFO
+            if response.status_code >= 500:
+                log_level = logging.ERROR
+            elif response.status_code >= 400:
+                log_level = logging.WARNING
+
+            logger.log(
+                log_level,
+                f"{request.method} {request.path} {response.status_code} ({duration_ms:.1f}ms)",
+                extra={
+                    'event': 'API_REQUEST_COMPLETED',
+                    'correlation_id': correlation_id,
+                    'upload_id': upload_id,
+                    'extra_data': {
+                        'method': request.method,
+                        'path': request.path,
+                        'status_code': response.status_code,
+                        'duration_ms': round(duration_ms, 2),
+                    }
+                }
+            )
+
+        clear_context()
+        return response
 
     def __call__(self, request: HttpRequest) -> HttpResponse:
         start_time = time.perf_counter()
