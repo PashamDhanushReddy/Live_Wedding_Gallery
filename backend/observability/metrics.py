@@ -14,7 +14,11 @@ from datetime import datetime, timezone, timedelta
 from threading import Lock
 from typing import Dict, Any, List, Optional
 
-import psutil
+try:
+    import psutil
+except ImportError:
+    psutil = None
+
 from django.conf import settings
 from django.utils import timezone as dj_timezone
 from django.core.cache import cache
@@ -365,6 +369,15 @@ class MetricsRegistry:
 
     def get_system_metrics(self) -> Dict[str, Any]:
         """Collects CPU and RAM statistics for host container."""
+        if psutil is None:
+            return {
+                'cpu_percent': 0.0,
+                'cpu_count': os.cpu_count() or 1,
+                'memory_process_rss_mb': 0.0,
+                'memory_system_total_mb': 0.0,
+                'memory_system_used_percent': 0.0,
+                'is_memory_high': False,
+            }
         try:
             process = psutil.Process()
             cpu_pct = psutil.cpu_percent(interval=None)
