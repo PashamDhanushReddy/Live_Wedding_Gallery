@@ -41,7 +41,8 @@ def authenticate_photographer_or_device(request, wedding, allow_device=True):
     Returns: (is_authorized: bool, device: PhoneDevice | None, error_message: str | None)
     """
     # 1. Standard user authentication
-    if request.user and request.user.is_authenticated and request.user.is_active:
+    user = getattr(request, 'user', None)
+    if user and user.is_authenticated and user.is_active:
         return True, None, None
 
     # 2. Token header
@@ -62,9 +63,13 @@ def authenticate_photographer_or_device(request, wedding, allow_device=True):
     if allow_device:
         device_id = request.headers.get('X-Device-Id') or request.data.get('device_id')
         if device_id:
-            device = PhoneDevice.objects.filter(wedding=wedding, device_id=device_id).first()
-            if device:
-                return True, device, None
+            device, created = PhoneDevice.objects.get_or_create(
+                wedding=wedding,
+                device_id=device_id
+            )
+            if created:
+                audit_log('DEVICE_REGISTERED', request=request, wedding_slug=wedding.slug, details=f"Auto-registered device_id={device_id}")
+            return True, device, None
 
     audit_log('UNAUTHORIZED_ACCESS_ATTEMPT', request=request, wedding_slug=wedding.slug, details=f"Path: {request.path}", level='warning')
     return False, None, "Unauthorized: Valid photographer token or registered phone device required."

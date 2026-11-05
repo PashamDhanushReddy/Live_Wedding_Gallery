@@ -40,6 +40,8 @@ def get_redis_client():
     redis_url = getattr(settings, 'REDIS_URL', None) or os.environ.get('REDIS_URL')
     if not redis_url:
         return None
+    if not settings.DEBUG and any(h in redis_url.lower() for h in ('localhost', '127.0.0.1', '::1')):
+        return None
 
     try:
         import redis

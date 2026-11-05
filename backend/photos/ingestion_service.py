@@ -386,7 +386,8 @@ def enqueue_job(job: IngestionJob, priority: int = 10):
     In production with Celery/Redis: dispatches to distributed Celery queue 'live_uploads' with priority.
     Fallback (development or single-service): dispatches to in-process ThreadPoolExecutor.
     """
-    use_celery = bool(os.environ.get('REDIS_URL')) and not getattr(settings, 'USE_LOCAL_THREAD_WORKER', False)
+    is_local_redis = any(h in (os.environ.get('REDIS_URL') or '').lower() for h in ('localhost', '127.0.0.1', '::1'))
+    use_celery = bool(os.environ.get('REDIS_URL')) and not (not settings.DEBUG and is_local_redis) and not getattr(settings, 'USE_LOCAL_THREAD_WORKER', False)
     if use_celery:
         try:
             from .tasks import process_ingestion_job_task
