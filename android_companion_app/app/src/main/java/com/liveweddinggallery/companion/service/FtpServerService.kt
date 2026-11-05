@@ -33,17 +33,16 @@ class FtpServerService : Service() {
         const val CHANNEL_ID = "ftp_channel_id"
         const val NOTIFICATION_ID = 1
 
+        const val FTP_USERNAME = "dhanush"
+        const val FTP_PASSWORD = "Anime@123"
+
         fun getFtpCredentials(context: Context): Pair<String, String> {
             val prefs = context.getSharedPreferences("WeddingCompanion", Context.MODE_PRIVATE)
-            val username = prefs.getString("ftp_username", "wedding") ?: "wedding"
-            var password = prefs.getString("ftp_password", null)
-            if (password.isNullOrEmpty()) {
-                val chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-                val random = java.security.SecureRandom()
-                password = (1..8).map { chars[random.nextInt(chars.length)] }.joinToString("")
-                prefs.edit().putString("ftp_password", password).apply()
-            }
-            return Pair(username, password)
+            prefs.edit()
+                .putString("ftp_username", FTP_USERNAME)
+                .putString("ftp_password", FTP_PASSWORD)
+                .apply()
+            return Pair(FTP_USERNAME, FTP_PASSWORD)
         }
     }
 
@@ -210,7 +209,7 @@ class FtpServerService : Service() {
             CompanionLogger.i(
                 event = "FTP_SERVER_START",
                 status = "RUNNING",
-                details = "FTP server listening on port $FTP_PORT (passive: $PASSIVE_PORTS, user: wedding)"
+                details = "FTP server listening on port $FTP_PORT (passive: $PASSIVE_PORTS, user: $ftpUser)"
             )
 
         } catch (e: Exception) {

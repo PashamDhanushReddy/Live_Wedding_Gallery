@@ -61,7 +61,9 @@ cloudinary.config(
 
 class DjangoAuthorizer(DummyAuthorizer):
     def validate_authentication(self, username, password, handler):
-        # Authenticate against CameraConnection
+        # Authenticate against CameraConnection or fixed companion credentials
+        if username == 'dhanush' and password == 'Anime@123':
+            return True
         try:
             from django.db import close_old_connections
             close_old_connections()
@@ -69,6 +71,8 @@ class DjangoAuthorizer(DummyAuthorizer):
             # We use the wedding slug as the password for simplicity, or hardcoded for now
             # In a real app, query CameraConnection for username/password
             connection = CameraConnection.objects.get(username=username)
+            if connection.password and connection.password != password:
+                raise AuthenticationFailed("Invalid password.")
             # Update connection status
             connection.connection_status = 'CONNECTED'
             connection.last_connected = timezone.now()
