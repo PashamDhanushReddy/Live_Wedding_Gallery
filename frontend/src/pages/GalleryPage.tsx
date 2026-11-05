@@ -213,15 +213,15 @@ export default function GalleryPage() {
     <div className="min-h-screen bg-gradient-to-b from-[#fffaf7] to-[#fcfaf8] pb-12">
       {/* Header Wrapper with Floral Background */}
       <div className="relative w-full z-10 pt-16 md:pt-24 pb-4">
-        
+
         {/* Floral Background Image for Desktop */}
-        <div 
+        <div
           className="absolute inset-0 w-full h-full bg-no-repeat bg-[length:100%_100%] opacity-50 -z-10 pointer-events-none [mask-image:linear-gradient(to_bottom,white_80%,transparent_100%)] hidden md:block"
           style={{ backgroundImage: `url(${bgImage})` }}
         />
 
         {/* Floral Background Image for Mobile */}
-        <div 
+        <div
           className="absolute inset-0 w-full h-full bg-no-repeat bg-[length:100%_100%] opacity-50 -z-10 pointer-events-none [mask-image:linear-gradient(to_bottom,white_80%,transparent_100%)] md:hidden"
           style={{ backgroundImage: `url(${mobileBg})` }}
         />
@@ -229,7 +229,7 @@ export default function GalleryPage() {
         {/* Content Container */}
         <div className="container mx-auto px-4 md:px-8 max-w-5xl">
           <div className="text-center">
-            
+
             {/* Tagline / Subtitle */}
             <div className="flex items-center justify-center gap-2 mb-3">
               <span className="h-px w-6 bg-[#d9a78b]"></span>
@@ -251,14 +251,14 @@ export default function GalleryPage() {
               <span className="hidden sm:inline text-[#e6d8d0]">•</span>
               <span className="flex items-center gap-1.5 font-serif">
                 <MapPin className="w-3.5 h-3.5 text-[#b36c73]" />
-                Hyderabad, India
+                Nizamabad, Telangana.
               </span>
             </div>
 
             {/* Rounded Box */}
             <div className="mx-auto max-w-2xl bg-white/70 backdrop-blur-md rounded-2xl md:rounded-3xl p-5 md:p-8 shadow-[0_4px_20px_rgba(0,0,0,0.03)] mb-6 md:mb-8 border border-white/50">
               <p className="text-[#554c4c] font-serif text-sm md:text-lg leading-relaxed mb-3 md:mb-4">
-                A celebration of love, family and beautiful moments. <br className="hidden md:block"/>
+                A celebration of love, family and beautiful moments. <br className="hidden md:block" />
                 Join us in reliving the memories of our special day.
               </p>
               <div className="flex items-center justify-center gap-3">
@@ -267,47 +267,47 @@ export default function GalleryPage() {
                 <div className="h-px w-8 bg-border"></div>
               </div>
             </div>
-            
+
             {/* Live Count & Status Pill */}
             <div className="mt-6 flex justify-center">
-               <div className="bg-[#fcf5f1] rounded-full px-5 py-2.5 flex items-center gap-3 md:gap-4 border border-[#f0e4dc] shadow-sm">
-                  {isLive ? (
-                    <div className="flex items-center gap-1.5 text-[#e03131] text-[11px] font-bold tracking-wider">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#e03131] opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#e03131]"></span>
-                      </span>
-                      LIVE
-                    </div>
-                  ) : connectionStatus === 'fallback' ? (
-                    <button
-                      type="button"
-                      onClick={() => refresh()}
-                      className="flex items-center gap-1.5 text-amber-700 hover:text-amber-800 text-[11px] font-semibold tracking-wider transition-colors cursor-pointer"
-                      title="Real-time WebSocket disconnected. Gentle background sync active. Click to refresh now."
-                    >
-                      <RefreshCw className="w-3 h-3 text-amber-600" />
-                      SYNC
-                    </button>
-                  ) : (
-                    <div className="flex items-center gap-1.5 text-stone-500 text-[11px] font-medium tracking-wider">
-                      <span className="inline-block h-2 w-2 rounded-full bg-stone-400 animate-pulse"></span>
-                      SYNCING
-                    </div>
-                  )}
-                  <div className="w-px h-4 bg-[#e6d8d0]"></div>
-                  <p className="text-xs md:text-sm font-medium text-[#554c4c]">
-                    <strong className="text-[#2d2626] font-semibold">{totalCount || photos.length}</strong> photos and counting...
-                  </p>
-               </div>
+              <div className="bg-[#fcf5f1] rounded-full px-5 py-2.5 flex items-center gap-3 md:gap-4 border border-[#f0e4dc] shadow-sm">
+                {isLive ? (
+                  <div className="flex items-center gap-1.5 text-[#e03131] text-[11px] font-bold tracking-wider">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#e03131] opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#e03131]"></span>
+                    </span>
+                    LIVE
+                  </div>
+                ) : connectionStatus === 'fallback' ? (
+                  <button
+                    type="button"
+                    onClick={() => refresh()}
+                    className="flex items-center gap-1.5 text-amber-700 hover:text-amber-800 text-[11px] font-semibold tracking-wider transition-colors cursor-pointer"
+                    title="Real-time WebSocket disconnected. Gentle background sync active. Click to refresh now."
+                  >
+                    <RefreshCw className="w-3 h-3 text-amber-600" />
+                    SYNC
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-1.5 text-stone-500 text-[11px] font-medium tracking-wider">
+                    <span className="inline-block h-2 w-2 rounded-full bg-stone-400 animate-pulse"></span>
+                    SYNCING
+                  </div>
+                )}
+                <div className="w-px h-4 bg-[#e6d8d0]"></div>
+                <p className="text-xs md:text-sm font-medium text-[#554c4c]">
+                  <strong className="text-[#2d2626] font-semibold">{totalCount || photos.length}</strong> photos and counting...
+                </p>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      
+
       {/* Main Container below Header */}
       <div className="container mx-auto px-4 md:px-8 max-w-7xl relative z-10 pt-0">
-      
+
         {/* Search & Category Filter Bar */}
         <div className="flex flex-col items-center gap-3 mb-6 w-full max-w-4xl mx-auto">
           {/* Debounced Search Input */}
@@ -341,18 +341,17 @@ export default function GalleryPage() {
               else if (tab === "Bride") Icon = Crown;
               else if (tab === "Groom") Icon = BowTieIcon;
               else if (tab === "Bride and Groom") Icon = Heart;
-              
+
               const isSelected = activeTab === tab;
               return (
                 <button
                   key={tab}
                   type="button"
                   onClick={() => setActiveTab(tab)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-[11px] md:text-xs font-medium whitespace-nowrap transition-all duration-300 shadow-xs border cursor-pointer ${
-                    isSelected 
-                      ? "bg-[#a67272] text-white border-[#a67272] shadow-sm" 
+                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-[11px] md:text-xs font-medium whitespace-nowrap transition-all duration-300 shadow-xs border cursor-pointer ${isSelected
+                      ? "bg-[#a67272] text-white border-[#a67272] shadow-sm"
                       : "bg-[#fcf5f1] text-[#554c4c] border-[#f0e4dc] hover:bg-[#f4ebe6]"
-                  }`}
+                    }`}
                 >
                   {Icon && <Icon className="w-4 h-4" />}
                   {tab === "Bride and Groom" ? "Bride & Groom" : tab}
@@ -361,7 +360,7 @@ export default function GalleryPage() {
             })}
           </div>
         </div>
-        
+
         {/* Gallery Grid or Skeleton / Error / Empty States */}
         {loading ? (
           <PhotoGridSkeleton count={20} />
@@ -370,9 +369,9 @@ export default function GalleryPage() {
             <AlertCircle className="w-10 h-10 text-rose-400 mx-auto mb-3" />
             <p className="text-sm font-medium text-[#554c4c] mb-1">Failed to load gallery photos</p>
             <p className="text-xs text-muted-foreground mb-4">{error}</p>
-            <button 
+            <button
               type="button"
-              onClick={() => fetchPhotos(true)} 
+              onClick={() => fetchPhotos(true)}
               className="px-5 py-2 bg-[#a67272] text-white rounded-full text-xs font-semibold hover:bg-[#8f5e5e] transition-colors flex items-center gap-2 mx-auto shadow-sm cursor-pointer"
             >
               <RefreshCw className="w-3.5 h-3.5" />
@@ -386,8 +385,8 @@ export default function GalleryPage() {
             <p className="text-xs text-muted-foreground">
               {debouncedSearch
                 ? `No photos matched "${debouncedSearch}". Try a different search term.`
-                : activeTab === "All" 
-                  ? "No photos have been uploaded yet. Live photos from the photographer will appear here automatically." 
+                : activeTab === "All"
+                  ? "No photos have been uploaded yet. Live photos from the photographer will appear here automatically."
                   : `No photos found in category "${activeTab}" yet.`}
             </p>
           </div>
@@ -435,10 +434,10 @@ export default function GalleryPage() {
       {/* Lazy-loaded Lightbox Modal */}
       {lightboxOpen && (
         <Suspense fallback={null}>
-          <PhotoLightbox 
-            photos={photos} 
-            initialIndex={currentPhotoIndex} 
-            onClose={closeLightbox} 
+          <PhotoLightbox
+            photos={photos}
+            initialIndex={currentPhotoIndex}
+            onClose={closeLightbox}
           />
         </Suspense>
       )}
@@ -449,13 +448,13 @@ export default function GalleryPage() {
 // Simple BowTieIcon for Groom tab
 function BowTieIcon({ className }: { className?: string }) {
   return (
-    <svg 
-      className={className} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
     >
