@@ -18,8 +18,17 @@ export default function LandingPage() {
         style={{ backgroundImage: `url(${mobileBg})` }}
       ></div>
 
-      <div className="relative z-10 container mx-auto px-6 pt-24 md:pt-32 pb-16 min-h-[90vh] flex flex-col items-center justify-start text-center">
+      <div className="relative z-10 container mx-auto px-6 pt-20 md:pt-28 pb-16 min-h-[90vh] flex flex-col items-center justify-start text-center">
         
+        {/* Emblem / Wedding Logo */}
+        <div className="mb-4">
+          <img
+            src="/wedding-logo.png"
+            alt="Sandeep & Prathyusha"
+            className="w-36 h-36 sm:w-44 sm:h-44 md:w-52 md:h-52 object-contain drop-shadow-md hover:scale-105 transition-transform duration-300"
+          />
+        </div>
+
         {/* Top Tagline */}
         <div className="flex items-center justify-center gap-4 mb-4 md:mb-6">
           <div className="w-12 h-px bg-border/80"></div>

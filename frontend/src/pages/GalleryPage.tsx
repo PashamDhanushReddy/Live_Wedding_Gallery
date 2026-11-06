@@ -230,6 +230,17 @@ export default function GalleryPage() {
         <div className="container mx-auto px-4 md:px-8 max-w-5xl">
           <div className="text-center">
 
+            {/* Wedding Emblem Logo */}
+            <div className="flex justify-center mb-4">
+              <div className="relative group">
+                <img
+                  src="/wedding-logo.png"
+                  alt="Sandeep & Prathyusha Wedding"
+                  className="w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44 object-contain drop-shadow-md hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+            </div>
+
             {/* Tagline / Subtitle */}
             <div className="flex items-center justify-center gap-2 mb-3">
               <span className="h-px w-6 bg-[#d9a78b]"></span>

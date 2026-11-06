@@ -1,0 +1,25 @@
+{
+  "short_name": "S & P Wedding",
+  "name": "Sandeep Reddy & Prathyusha Reddy Wedding Gallery",
+  "description": "Live Wedding Gallery for Sandeep & Prathyusha",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#fffaf7",
+  "theme_color": "#b36c73",
+  "display": "standalone",
+  "orientation": "portrait"
+}
+
