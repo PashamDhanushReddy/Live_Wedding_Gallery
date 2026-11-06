@@ -11,6 +11,16 @@
         android:orientation="vertical"
         android:padding="24dp">
 
+        <ImageView
+            android:id="@+id/ivAppLogo"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/wedding_logo"
+            android:contentDescription="Sandeep and Prathyusha Wedding Logo"
+            android:layout_marginBottom="14dp"
+            android:adjustViewBounds="true" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -18,14 +28,16 @@
             android:textColor="#FFFFFF"
             android:textSize="22sp"
             android:textStyle="bold"
-            android:layout_marginBottom="8dp" />
+            android:gravity="center"
+            android:layout_marginBottom="4dp" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Live Wedding Gallery Ingestion Hub"
             android:textColor="#AAAAAA"
-            android:textSize="16sp"
+            android:textSize="15sp"
+            android:gravity="center"
             android:layout_marginBottom="24dp" />
 
         <!-- SYSTEM STATUS PANEL -->

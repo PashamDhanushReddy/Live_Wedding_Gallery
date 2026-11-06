@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Heart, Menu, Search, Camera } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import weddingLogo from "../../assets/wedding-logo.png";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -20,7 +21,7 @@ export default function Header() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 group">
           <img
-            src="/wedding-logo.png"
+            src={weddingLogo}
             alt="Sandeep & Prathyusha"
             className="w-9 h-9 md:w-11 md:h-11 object-contain drop-shadow-sm group-hover:scale-105 transition-transform duration-200"
           />

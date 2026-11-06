@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Camera, Image as ImageIcon, Calendar, MapPin } from "lucide-react";
 import bgImage from "../assets/bg_blue.png";
 import mobileBg from "../assets/mobile_bg.png";
+import weddingLogo from "../assets/wedding-logo.png";
 
 export default function LandingPage() {
   return (
@@ -23,7 +24,7 @@ export default function LandingPage() {
         {/* Emblem / Wedding Logo */}
         <div className="mb-4">
           <img
-            src="/wedding-logo.png"
+            src={weddingLogo}
             alt="Sandeep & Prathyusha"
             className="w-36 h-36 sm:w-44 sm:h-44 md:w-52 md:h-52 object-contain drop-shadow-md hover:scale-105 transition-transform duration-300"
           />

@@ -25,6 +25,7 @@ const mapPhoto = (p: any): GalleryPhotoItem => ({
 
 import bgImage from "../assets/bg_blue.png";
 import mobileBg from "../assets/mobile_bg.png";
+import weddingLogo from "../assets/wedding-logo.png";
 
 interface TabCacheEntry {
   photos: GalleryPhotoItem[];
@@ -234,7 +235,7 @@ export default function GalleryPage() {
             <div className="flex justify-center mb-4">
               <div className="relative group">
                 <img
-                  src="/wedding-logo.png"
+                  src={weddingLogo}
                   alt="Sandeep & Prathyusha Wedding"
                   className="w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44 object-contain drop-shadow-md hover:scale-105 transition-transform duration-300"
                 />
