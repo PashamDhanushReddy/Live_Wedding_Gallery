@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Heart, Menu, Search, Camera } from "lucide-react";
+import { Heart, Menu, Camera } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import weddingLogo from "../../assets/wedding-logo.png";
@@ -10,7 +10,7 @@ export default function Header() {
 
   const navLinks = [
     { name: "Home", path: "/" },
-    { name: "Photos", path: "/photos" },
+    { name: "My Photos", path: "/photos" },
     { name: "About", path: "/about" },
     { name: "Share", path: "/share" },
   ];
@@ -51,13 +51,15 @@ export default function Header() {
         </nav>
 
         {/* Desktop Actions */}
-        <div className="hidden md:flex items-center gap-4">
-          <Link to="/photographer" className="p-2 text-muted-foreground hover:text-foreground transition-colors" title="Photographer Portal">
-            <Camera className="w-5 h-5" />
+        <div className="hidden md:flex items-center gap-3">
+          <Link 
+            to="/photographer/login" 
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-stone-600 bg-white/60 hover:bg-white/90 border border-stone-200/80 rounded-full transition-all shadow-xs" 
+            title="Photographer Portal (Full Gallery)"
+          >
+            <Camera className="w-3.5 h-3.5 text-[#a07171]" />
+            <span>Photographer</span>
           </Link>
-          <button className="p-2 text-muted-foreground hover:text-foreground transition-colors">
-            <Search className="w-5 h-5" />
-          </button>
           
           <div className="flex items-center gap-2 bg-secondary px-3 py-1.5 rounded-full text-xs font-medium">
             <span className="relative flex h-2 w-2">
@@ -68,10 +70,10 @@ export default function Header() {
           </div>
           
           <Link
-            to="/find"
-            className="bg-primary text-primary-foreground px-6 py-2.5 rounded-full text-sm font-medium hover:bg-primary/90 transition-all shadow-sm"
+            to="/photos"
+            className="bg-primary text-primary-foreground px-5 py-2 rounded-full text-xs sm:text-sm font-medium hover:bg-primary/90 transition-all shadow-sm"
           >
-            Find My Photos
+            Scan Face
           </Link>
         </div>
 
@@ -115,18 +117,19 @@ export default function Header() {
                   LIVE
                 </div>
                 <Link
-                  to="/find"
+                  to="/photos"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="bg-primary text-primary-foreground px-6 py-2 rounded-full text-sm font-medium"
+                  className="bg-primary text-primary-foreground px-5 py-2 rounded-full text-xs font-medium"
                 >
-                  Find My Photos
+                  Scan Face
                 </Link>
                 <Link
-                  to="/photographer"
+                  to="/photographer/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="p-2 ml-2 text-muted-foreground hover:text-foreground"
+                  className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-stone-600 bg-stone-100 rounded-full"
                 >
-                  <Camera className="w-5 h-5" />
+                  <Camera className="w-4 h-4 text-[#a07171]" />
+                  <span>Photographer</span>
                 </Link>
               </div>
             </nav>

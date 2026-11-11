@@ -56,8 +56,13 @@ export default function AdminGallery() {
   const fetchPhotos = useCallback(async () => {
     setLoading(true);
     try {
+      const token = localStorage.getItem("photographer_token");
       const folderParam = activeTab !== "All" ? `?folder=${encodeURIComponent(activeTab)}` : "";
-      const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/photos/${folderParam}`);
+      const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/photos/${folderParam}`, {
+        headers: {
+          ...(token ? { "Authorization": `Token ${token}`, "X-Photographer-Token": token } : {})
+        }
+      });
       if (res.ok) {
         const data = await res.json();
         const rawList = Array.isArray(data) ? data : (data.results || []);
@@ -80,7 +85,12 @@ export default function AdminGallery() {
     if (!nextPageUrl || loadingMore) return;
     setLoadingMore(true);
     try {
-      const res = await fetch(nextPageUrl);
+      const token = localStorage.getItem("photographer_token");
+      const res = await fetch(nextPageUrl, {
+        headers: {
+          ...(token ? { "Authorization": `Token ${token}`, "X-Photographer-Token": token } : {})
+        }
+      });
       if (res.ok) {
         const data = await res.json();
         const rawList = Array.isArray(data) ? data : (data.results || []);

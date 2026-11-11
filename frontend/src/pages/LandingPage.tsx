@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Camera, Image as ImageIcon, Calendar, MapPin } from "lucide-react";
+import { Calendar, MapPin, ScanFace, ShieldCheck } from "lucide-react";
 import bgImage from "../assets/bg_blue.png";
 import mobileBg from "../assets/mobile_bg.png";
 import weddingLogo from "../assets/wedding-logo.png";
@@ -82,22 +82,21 @@ export default function LandingPage() {
           Join us in reliving the memories of our special day.
         </p>
         
-        {/* Buttons (Standard pills instead of big boxes) */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-12 md:mb-20 z-20">
+        {/* Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-4 z-20">
           <Link 
             to="/photos" 
-            className="flex items-center justify-center gap-2 bg-[#a07171] text-white px-8 py-3.5 rounded-full font-medium hover:bg-[#8a5f5f] transition-all shadow-md"
+            className="flex items-center justify-center gap-2 bg-[#a07171] text-white px-8 py-3.5 rounded-full font-medium hover:bg-[#8a5f5f] transition-all shadow-md active:scale-98"
           >
-            <Camera className="w-5 h-5" />
-            View All Photos
+            <ScanFace className="w-5 h-5" />
+            Scan Face & View My Photos
           </Link>
-          <Link 
-            to="/find" 
-            className="flex items-center justify-center gap-2 bg-white/60 backdrop-blur-sm border border-[#a07171]/30 text-[#554c4c] px-8 py-3.5 rounded-full font-medium hover:bg-white/80 transition-all shadow-sm"
-          >
-            <ImageIcon className="w-5 h-5" />
-            Find My Photos
-          </Link>
+        </div>
+
+        {/* Privacy Assurance Pill */}
+        <div className="flex items-center justify-center gap-2 text-xs md:text-sm text-[#554c4c]/90 bg-white/80 backdrop-blur-md px-5 py-2 rounded-full border border-[#a07171]/20 shadow-xs mb-10 z-20">
+          <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>Guest Privacy Protected: Photos are personalized to you via AI facial recognition.</span>
         </div>
         
         {/* Bottom Text */}

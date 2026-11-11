@@ -129,6 +129,37 @@ class WeddingViewAuthorizationAndFilteringTests(SimpleTestCase):
         mock_photo.delete.assert_not_called()
         mock_cld_delete.assert_not_called()
 
+    @patch('weddings.views.get_object_or_404')
+    def test_wedding_photos_view_unauthorized_guest_rejected(self, mock_get_wedding):
+        """Unauthenticated guests cannot view all photos; must be 403 Forbidden for privacy."""
+        mock_wedding = MagicMock(slug='test-slug', is_active=True)
+        mock_get_wedding.return_value = mock_wedding
+
+        req = self.factory.get('/api/weddings/test-slug/photos/')
+        view = WeddingPhotosView.as_view()
+        resp = view(req, slug='test-slug')
+
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(resp.data['code'], 'GALLERY_PRIVACY_RESTRICTED')
+
+    @patch('photos.views.authenticate_photographer_or_device')
+    @patch('weddings.views.get_object_or_404')
+    def test_wedding_photos_view_authorized_photographer_allowed(self, mock_get_wedding, mock_auth):
+        """Authenticated photographers can view all photos."""
+        mock_wedding = MagicMock(slug='test-slug', is_active=True)
+        mock_get_wedding.return_value = mock_wedding
+        mock_auth.return_value = (True, None, None)
+
+        req = self.factory.get('/api/weddings/test-slug/photos/', HTTP_X_PHOTOGRAPHER_TOKEN='test-token-123')
+        view = WeddingPhotosView.as_view()
+        with patch.object(WeddingPhotosView, 'get_queryset') as mock_get_qs:
+            mock_qs = MagicMock()
+            mock_qs.count.return_value = 0
+            mock_qs.order_by.return_value = []
+            mock_get_qs.return_value = mock_qs
+            resp = view(req, slug='test-slug')
+            self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
 
 class WebSocketConsumerProtocolTests(SimpleTestCase):
     """Tests WebSocket event payloads and subscription isolation."""

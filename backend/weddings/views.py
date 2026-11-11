@@ -176,6 +176,16 @@ class WeddingPhotosView(generics.ListAPIView):
         slug = self.kwargs.get('slug')
         wedding = get_object_or_404(Wedding, slug=slug, is_active=True)
 
+        # Privacy Enforcement: Only authenticated photographers, staff, or registered devices can list all wedding photos
+        from photos.views import authenticate_photographer_or_device
+        is_auth, _, auth_err = authenticate_photographer_or_device(request, wedding, allow_device=True)
+        if not is_auth:
+            return Response({
+                'status': 'forbidden',
+                'code': 'GALLERY_PRIVACY_RESTRICTED',
+                'message': 'Browsing all wedding photos is restricted to the photographer portal to protect attendee privacy. Please scan your face to view your personal photos, or sign in as a photographer.'
+            }, status=status.HTTP_403_FORBIDDEN)
+
         is_first_page = (
             not request.query_params.get('cursor') and
             not request.query_params.get('date') and
