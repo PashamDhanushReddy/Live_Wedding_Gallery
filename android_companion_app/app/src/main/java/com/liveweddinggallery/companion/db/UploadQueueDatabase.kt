@@ -232,7 +232,7 @@ class UploadQueueDatabase private constructor(context: Context) :
             """
             SELECT id, upload_id, original_name, file_path, file_size, checksum_sha256, folder, status, attempts, last_error, next_retry_at, created_at, forwarded_at
             FROM $TABLE_NAME
-            WHERE status IN ('$STATUS_PENDING', '$STATUS_FAILED') AND next_retry_at <= ? AND attempts < 5
+            WHERE status IN ('$STATUS_PENDING', '$STATUS_FAILED') AND next_retry_at <= ? AND attempts < 10
             ORDER BY created_at ASC
             LIMIT ?
             """.trimIndent(),

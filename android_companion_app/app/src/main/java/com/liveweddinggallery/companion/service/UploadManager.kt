@@ -115,23 +115,84 @@ object UploadManager {
         return dir
     }
 
+    private val activeFtpPaths = java.util.concurrent.ConcurrentHashMap<String, String>()
+    private val sessionActivePaths = java.util.concurrent.ConcurrentHashMap<String, MutableSet<String>>()
+    private val observedIncomingFiles = java.util.concurrent.ConcurrentHashMap<String, Pair<Long, Long>>()
+    private val recentlyQueuedFtpFiles = java.util.concurrent.ConcurrentHashMap<String, Pair<Long, Long>>()
+    private val pathEnqueueLocks = java.util.concurrent.ConcurrentHashMap<String, Any>()
+
+    fun markFtpTransferStarted(sessionId: String?, file: File) {
+        val path = try { file.canonicalPath } catch (_: Exception) { file.absolutePath }
+        val sid = sessionId ?: "default"
+        activeFtpPaths[path] = sid
+        sessionActivePaths.computeIfAbsent(sid) {
+            java.util.Collections.newSetFromMap(java.util.concurrent.ConcurrentHashMap())
+        }.add(path)
+        recentlyQueuedFtpFiles.remove(path)
+    }
+
+    fun markFtpTransferFinished(sessionId: String?, file: File) {
+        val path = try { file.canonicalPath } catch (_: Exception) { file.absolutePath }
+        activeFtpPaths.remove(path)
+        if (sessionId != null) {
+            sessionActivePaths[sessionId]?.remove(path)
+        }
+        observedIncomingFiles.remove(path)
+    }
+
+    fun clearActiveSessionTransfers(sessionId: String?) {
+        val sid = sessionId ?: return
+        val paths = sessionActivePaths.remove(sid) ?: return
+        for (p in paths) {
+            activeFtpPaths.remove(p, sid)
+        }
+    }
+
+    internal fun isFtpTransferActive(file: File): Boolean {
+        val path = try { file.canonicalPath } catch (_: Exception) { file.absolutePath }
+        return activeFtpPaths.containsKey(path)
+    }
+
+    internal fun isFileSettledForPoll(file: File): Boolean {
+        val path = try { file.canonicalPath } catch (_: Exception) { file.absolutePath }
+        if (activeFtpPaths.containsKey(path)) return false
+        val len = file.length()
+        val mtime = file.lastModified()
+        val now = System.currentTimeMillis()
+        if (len <= 0L || (now - mtime) < 3500L) {
+            observedIncomingFiles[path] = Pair(len, mtime)
+            return false
+        }
+        val prev = observedIncomingFiles[path]
+        observedIncomingFiles[path] = Pair(len, mtime)
+        // Require at least two consecutive unchanged poll observations (>= 3.5s quiet after last write)
+        if (prev == null || prev.first != len || prev.second != mtime) {
+            return false
+        }
+        return true
+    }
+
     private fun scanAndEnqueueIncomingFiles(context: Context) {
         val ftpDir = getFtpIncomingDir(context)
         val validExtensions = setOf("jpg", "jpeg", "png", "webp")
-        val db = UploadQueueDatabase.getInstance(context)
 
-        val files = ftpDir.listFiles()?.filter { f ->
+        val files = ftpDir.walkTopDown().filter { f ->
             f.isFile && validExtensions.contains(f.extension.lowercase()) && !f.name.endsWith(".part")
-        } ?: return
+        }.filter { f ->
+            isFileSettledForPoll(f)
+        }.toList()
 
         val now = System.currentTimeMillis()
         for (file in files) {
+            val path = try { file.canonicalPath } catch (_: Exception) { file.absolutePath }
+            val sig = Pair(file.length(), file.lastModified())
+            val queuedSig = recentlyQueuedFtpFiles[path]
             val ageMs = now - file.lastModified()
-            val validation = FileIntegrityValidator.validateFile(file)
-            if (validation is FileIntegrityValidator.ValidationResult.Valid && db.isDuplicateChecksum(validation.checksumSha256)) {
-                // Windows File Explorer grace period: delete from ftp folder only after 30 seconds
-                if (ageMs > 30000) {
+            if (queuedSig != null && queuedSig == sig) {
+                if (ageMs > 30000L) {
                     file.delete()
+                    recentlyQueuedFtpFiles.remove(path)
+                    observedIncomingFiles.remove(path)
                 }
                 continue
             }
@@ -140,91 +201,102 @@ object UploadManager {
     }
 
     private fun processIncomingFile(file: File, context: Context) {
-        if (!file.exists() || file.length() == 0L) return
+        val canonicalKey = try { file.canonicalPath } catch (_: Exception) { file.absolutePath }
+        val fileLock = pathEnqueueLocks.computeIfAbsent(canonicalKey) { Any() }
+        synchronized(fileLock) {
+            if (!file.exists() || file.length() == 0L || isFtpTransferActive(file)) return
 
-        // Check storage before admitting file
-        val storage = StorageMonitor.getStorageStatus(context)
-        if (storage.isCritical) {
-            CompanionLogger.e(
-                event = "STORAGE_CRITICAL",
-                filename = file.name,
-                details = "Storage critical (${storage.availableMb} MB free). Forcing emergency purge."
-            )
-            StorageMonitor.performSafeCleanup(context, forceDueToLowStorage = true)
-        }
-
-        // Validate complete container and boundaries
-        val validation = FileIntegrityValidator.validateFile(file)
-        val db = UploadQueueDatabase.getInstance(context)
-
-        when (validation) {
-            is FileIntegrityValidator.ValidationResult.Valid -> {
-                val ageMs = System.currentTimeMillis() - file.lastModified()
-                // Deduplication check
-                if (db.isDuplicateChecksum(validation.checksumSha256)) {
-                    CompanionLogger.i(
-                        event = "DEDUPLICATION",
-                        filename = file.name,
-                        status = "SKIPPED",
-                        details = "Identical photo already in queue or uploaded (SHA: ${validation.checksumSha256.take(8)})"
-                    )
-                    if (ageMs > 30000) {
-                        file.delete()
-                    }
-                    return
-                }
-
-                val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                val currentFolder = prefs.getString(KEY_CURRENT_FOLDER, DEFAULT_FOLDER) ?: DEFAULT_FOLDER
-                val uploadId = UUID.randomUUID().toString()
-
-                // Copy to persistent ready directory with collision-free unique name
-                // Leaving original in ftp/ so Windows File Explorer can verify SIZE/MDTM without 550 errors
-                val readyDir = getReadyDir(context)
-                val uniqueSafeName = "${System.currentTimeMillis()}_${uploadId.take(8)}_${file.name}"
-                val targetFile = File(readyDir, uniqueSafeName)
-
-                try {
-                    file.copyTo(targetFile, overwrite = true)
-                } catch (e: Exception) {
-                    CompanionLogger.e("FILE_COPY_FAIL", uploadId = uploadId, filename = file.name, details = e.message ?: "", throwable = e)
-                    return
-                }
-                val storedPath = targetFile.absolutePath
-
-                val enqueued = db.enqueue(
-                    uploadId = uploadId,
-                    originalName = file.name,
-                    filePath = storedPath,
-                    fileSize = targetFile.length(),
-                    checksumSha256 = validation.checksumSha256,
-                    folder = currentFolder
+            // Check storage before admitting file
+            val storage = StorageMonitor.getStorageStatus(context)
+            if (storage.isCritical) {
+                CompanionLogger.e(
+                    event = "STORAGE_CRITICAL",
+                    filename = file.name,
+                    details = "Storage critical (${storage.availableMb} MB free). Forcing emergency purge."
                 )
-
-                if (enqueued) {
-                    CompanionLogger.i(
-                        event = "FILE_ENQUEUED",
-                        uploadId = uploadId,
-                        filename = file.name,
-                        status = "QUEUED",
-                        details = "Dimensions: ${validation.width}x${validation.height}, Size: ${targetFile.length() / 1024} KB, Folder: $currentFolder"
-                    )
-                }
+                StorageMonitor.performSafeCleanup(context, forceDueToLowStorage = true)
             }
-            is FileIntegrityValidator.ValidationResult.Invalid -> {
-                // If the file is simply still being written, let the next loop handle it.
-                // But if it's genuinely corrupted and hasn't changed for over 10 seconds, quarantine it.
-                val age = System.currentTimeMillis() - file.lastModified()
-                if (age > 15000) {
-                    CompanionLogger.w(
-                        event = "CORRUPT_QUARANTINE",
-                        filename = file.name,
-                        status = "CORRUPTED",
-                        details = "File failed integrity after 15s: ${validation.reason}"
+
+            // Validate complete container and boundaries
+            val validation = FileIntegrityValidator.validateFile(file)
+            val db = UploadQueueDatabase.getInstance(context)
+
+            when (validation) {
+                is FileIntegrityValidator.ValidationResult.Valid -> {
+                    val ageMs = System.currentTimeMillis() - file.lastModified()
+                    val sig = Pair(file.length(), file.lastModified())
+                    // Deduplication check
+                    if (db.isDuplicateChecksum(validation.checksumSha256)) {
+                        recentlyQueuedFtpFiles[canonicalKey] = sig
+                        CompanionLogger.i(
+                            event = "DEDUPLICATION",
+                            filename = file.name,
+                            status = "SKIPPED",
+                            details = "Identical photo already in queue or uploaded (SHA: ${validation.checksumSha256.take(8)})"
+                        )
+                        if (ageMs > 30000) {
+                            file.delete()
+                            recentlyQueuedFtpFiles.remove(canonicalKey)
+                            observedIncomingFiles.remove(canonicalKey)
+                        }
+                        return
+                    }
+
+                    val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                    val currentFolder = prefs.getString(KEY_CURRENT_FOLDER, DEFAULT_FOLDER) ?: DEFAULT_FOLDER
+                    val uploadId = UUID.randomUUID().toString()
+
+                    // Copy to persistent ready directory with collision-free unique name
+                    // Leaving original in ftp/ briefly so FTP clients can verify SIZE/MDTM cleanly
+                    val readyDir = getReadyDir(context)
+                    val uniqueSafeName = "${System.currentTimeMillis()}_${uploadId.take(8)}_${file.name}"
+                    val targetFile = File(readyDir, uniqueSafeName)
+
+                    try {
+                        file.copyTo(targetFile, overwrite = true)
+                    } catch (e: Exception) {
+                        CompanionLogger.e("FILE_COPY_FAIL", uploadId = uploadId, filename = file.name, details = e.message ?: "", throwable = e)
+                        return
+                    }
+                    val storedPath = targetFile.absolutePath
+
+                    val enqueued = db.enqueue(
+                        uploadId = uploadId,
+                        originalName = file.name,
+                        filePath = storedPath,
+                        fileSize = targetFile.length(),
+                        checksumSha256 = validation.checksumSha256,
+                        folder = currentFolder
                     )
-                    val corruptDir = File(context.filesDir, "corrupted_photos")
-                    if (!corruptDir.exists()) corruptDir.mkdirs()
-                    file.renameTo(File(corruptDir, "${System.currentTimeMillis()}_${file.name}"))
+
+                    if (enqueued) {
+                        recentlyQueuedFtpFiles[canonicalKey] = sig
+                        CompanionLogger.i(
+                            event = "FILE_ENQUEUED",
+                            uploadId = uploadId,
+                            filename = file.name,
+                            status = "QUEUED",
+                            details = "Dimensions: ${validation.width}x${validation.height}, Size: ${targetFile.length() / 1024} KB, Folder: $currentFolder"
+                        )
+                    } else {
+                        targetFile.delete()
+                    }
+                }
+                is FileIntegrityValidator.ValidationResult.Invalid -> {
+                    // Only quarantine files that have been completely idle for >20s and are not in an active FTP session.
+                    val age = System.currentTimeMillis() - file.lastModified()
+                    if (age > 20000 && !isFtpTransferActive(file)) {
+                        CompanionLogger.w(
+                            event = "CORRUPT_QUARANTINE",
+                            filename = file.name,
+                            status = "CORRUPTED",
+                            details = "File failed integrity after 20s: ${validation.reason}"
+                        )
+                        val corruptDir = File(context.filesDir, "corrupted_photos")
+                        if (!corruptDir.exists()) corruptDir.mkdirs()
+                        file.renameTo(File(corruptDir, "${System.currentTimeMillis()}_${file.name}"))
+                        observedIncomingFiles.remove(canonicalKey)
+                    }
                 }
             }
         }
@@ -232,7 +304,7 @@ object UploadManager {
 
     private suspend fun processPendingQueue(context: Context) = coroutineScope {
         val db = UploadQueueDatabase.getInstance(context)
-        val pendingItems = db.getPendingBatch(limit = 6)
+        val pendingItems = db.getPendingBatch(limit = 10)
 
         if (pendingItems.isEmpty()) return@coroutineScope
 
@@ -271,7 +343,7 @@ object UploadManager {
             uploadId = item.uploadId,
             filename = item.originalName,
             status = "UPLOADING",
-            details = "Attempt ${item.attempts + 1}/5, Streaming ${uploadFile.length() / 1024} KB to backend"
+            details = "Attempt ${item.attempts + 1}/10, Sending ${uploadFile.length() / 1024} KB to backend"
         )
 
         val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -283,6 +355,30 @@ object UploadManager {
         val boundary = "==Boundary-${UUID.randomUUID()}=="
         val lineEnd = "\r\n"
         val twoHyphens = "--"
+
+        val headerBytes = buildString {
+            append(twoHyphens).append(boundary).append(lineEnd)
+            append("Content-Disposition: form-data; name=\"device_id\"").append(lineEnd).append(lineEnd)
+            append(deviceId).append(lineEnd)
+
+            append(twoHyphens).append(boundary).append(lineEnd)
+            append("Content-Disposition: form-data; name=\"folder\"").append(lineEnd).append(lineEnd)
+            append(item.folder).append(lineEnd)
+
+            append(twoHyphens).append(boundary).append(lineEnd)
+            append("Content-Disposition: form-data; name=\"upload_id\"").append(lineEnd).append(lineEnd)
+            append(item.uploadId).append(lineEnd)
+
+            append(twoHyphens).append(boundary).append(lineEnd)
+            append("Content-Disposition: form-data; name=\"checksum\"").append(lineEnd).append(lineEnd)
+            append(uploadChecksum).append(lineEnd)
+
+            append(twoHyphens).append(boundary).append(lineEnd)
+            append("Content-Disposition: form-data; name=\"photo\"; filename=\"").append(item.originalName).append("\"").append(lineEnd)
+            append("Content-Type: image/jpeg").append(lineEnd).append(lineEnd)
+        }.toByteArray(Charsets.UTF_8)
+        val footerBytes = (lineEnd + twoHyphens + boundary + twoHyphens + lineEnd).toByteArray(Charsets.UTF_8)
+        val totalContentLength = headerBytes.size.toLong() + uploadFile.length() + footerBytes.size.toLong()
 
         var connection: HttpURLConnection? = null
         try {
@@ -303,35 +399,11 @@ object UploadManager {
                     setRequestProperty("Authorization", "Token $authToken")
                     setRequestProperty("X-Photographer-Token", authToken)
                 }
-                // Disable internal HTTP chunking/buffering in Android memory for large streams
-                setChunkedStreamingMode(64 * 1024)
+                setFixedLengthStreamingMode(totalContentLength)
             }
 
             DataOutputStream(connection.outputStream).use { outputStream ->
-                // 1. device_id
-                outputStream.writeBytes(twoHyphens + boundary + lineEnd)
-                outputStream.writeBytes("Content-Disposition: form-data; name=\"device_id\"$lineEnd$lineEnd")
-                outputStream.writeBytes("$deviceId$lineEnd")
-
-                // 2. folder
-                outputStream.writeBytes(twoHyphens + boundary + lineEnd)
-                outputStream.writeBytes("Content-Disposition: form-data; name=\"folder\"$lineEnd$lineEnd")
-                outputStream.writeBytes("${item.folder}$lineEnd")
-
-                // 3. upload_id
-                outputStream.writeBytes(twoHyphens + boundary + lineEnd)
-                outputStream.writeBytes("Content-Disposition: form-data; name=\"upload_id\"$lineEnd$lineEnd")
-                outputStream.writeBytes("${item.uploadId}$lineEnd")
-
-                // 4. checksum
-                outputStream.writeBytes(twoHyphens + boundary + lineEnd)
-                outputStream.writeBytes("Content-Disposition: form-data; name=\"checksum\"$lineEnd$lineEnd")
-                outputStream.writeBytes("$uploadChecksum$lineEnd")
-
-                // 5. photo file (STREAMED DIRECTLY FROM OPTIMIZED DISK FILE)
-                outputStream.writeBytes(twoHyphens + boundary + lineEnd)
-                outputStream.writeBytes("Content-Disposition: form-data; name=\"photo\"; filename=\"${item.originalName}\"$lineEnd")
-                outputStream.writeBytes("Content-Type: image/jpeg$lineEnd$lineEnd")
+                outputStream.write(headerBytes)
 
                 FileInputStream(uploadFile).use { fis ->
                     val buffer = ByteArray(64 * 1024)
@@ -342,8 +414,7 @@ object UploadManager {
                     }
                 }
 
-                outputStream.writeBytes(lineEnd)
-                outputStream.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd)
+                outputStream.write(footerBytes)
                 outputStream.flush()
             }
 
@@ -368,7 +439,8 @@ object UploadManager {
             } else {
                 val errorStreamText = connection.errorStream?.bufferedReader()?.use { it.readText() } ?: "No response body"
                 val errorMsg = "HTTP $responseCode: $errorStreamText"
-                handleUploadFailure(db, item, errorMsg)
+                val retryAfterSec = connection.getHeaderField("Retry-After")?.toLongOrNull()
+                handleUploadFailure(db, item, errorMsg, retryAfterSeconds = retryAfterSec)
             }
 
         } catch (e: Exception) {
@@ -386,11 +458,17 @@ object UploadManager {
         db: UploadQueueDatabase,
         item: UploadQueueDatabase.QueueItem,
         errorMsg: String,
-        throwable: Throwable? = null
+        throwable: Throwable? = null,
+        retryAfterSeconds: Long? = null
     ) {
         val attempts = item.attempts + 1
-        // Exponential backoff: 2s, 4s, 8s, 16s, 32s, 60s
-        val backoffDelayMs = Math.min(2000L * (1L shl Math.min(attempts, 6)), 60000L)
+        // Exponential backoff: 2s, 4s, 8s, 16s, 32s, 60s (honoring Retry-After if server throttles)
+        val defaultDelayMs = Math.min(2000L * (1L shl Math.min(attempts, 6)), 60000L)
+        val backoffDelayMs = if (retryAfterSeconds != null && retryAfterSeconds > 0L) {
+            Math.max(defaultDelayMs, Math.min(retryAfterSeconds * 1000L, 120000L))
+        } else {
+            defaultDelayMs
+        }
         val nextRetryAt = System.currentTimeMillis() + backoffDelayMs
 
         db.markFailed(item.uploadId, errorMsg, nextRetryAt)
@@ -399,7 +477,7 @@ object UploadManager {
             uploadId = item.uploadId,
             filename = item.originalName,
             status = "RETRY_SCHEDULED",
-            details = "Attempt $attempts/5 failed. Next retry in ${backoffDelayMs / 1000}s. Error: $errorMsg",
+            details = "Attempt $attempts/10 failed. Next retry in ${backoffDelayMs / 1000}s. Error: $errorMsg",
             throwable = throwable
         )
     }

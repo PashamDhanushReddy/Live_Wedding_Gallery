@@ -1,10 +1,16 @@
 import { useState, useRef, useMemo } from "react";
 import { UploadCloud, Image as ImageIcon, CheckCircle, XCircle, Zap } from "lucide-react";
-import { API_BASE_URL, WEDDING_SLUG } from "../../config";
+import {
+  API_BASE_URL,
+  WEDDING_SLUG,
+  GALLERY_EVENT_FOLDERS,
+  GALLERY_PERSON_CATEGORIES,
+} from "../../config";
 import imageCompression from 'browser-image-compression';
 
 export default function ManualUpload() {
-  const [activeFolder, setActiveFolder] = useState("Engagement");
+  const [activeFolder, setActiveFolder] = useState(GALLERY_EVENT_FOLDERS[0]);
+  const [uploadedFolder, setUploadedFolder] = useState(GALLERY_EVENT_FOLDERS[0]);
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -45,7 +51,7 @@ export default function ManualUpload() {
     setFiles(files.filter((_, i) => i !== index));
   };
 
-  const uploadSingleFile = async (file: File, token: string | null): Promise<void> => {
+  const uploadSingleFile = async (file: File, targetFolder: string, token: string | null): Promise<void> => {
     let fileToUpload = file;
 
     // Mandatory Cloud-Saver client-side optimization using browser Web Workers
@@ -64,7 +70,7 @@ export default function ManualUpload() {
     }
 
     const formData = new FormData();
-    formData.append("folder", activeFolder);
+    formData.append("folder", targetFolder);
     formData.append("photos", fileToUpload, file.name);
 
     const headers: Record<string, string> = {};
@@ -78,17 +84,19 @@ export default function ManualUpload() {
 
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
-      const errText = errData.message || errData.error || (await res.text().catch(() => "Upload failed"));
+      const errText = errData.message || errData.error || `HTTP ${res.status}`;
       throw new Error(`Upload failed for ${file.name} (${res.status}): ${errText}`);
     }
   };
 
   const handleUpload = async () => {
     if (files.length === 0) return;
+    const targetFolder = activeFolder;
     setUploading(true);
     setProgress(0);
     setStatus("idle");
     setErrorMessage("");
+    setUploadedFolder(targetFolder);
 
     const token = localStorage.getItem("photographer_token");
     const totalFiles = files.length;
@@ -99,18 +107,18 @@ export default function ManualUpload() {
     const queue = [...files];
 
     try {
-      setCurrentStep(`Starting ${totalFiles} photo uploads (Cloud-Saver 2.5K Quad-HD)...`);
+      setCurrentStep(`Starting ${totalFiles} photo uploads to "${targetFolder}" (Cloud-Saver 2.5K Quad-HD)...`);
 
       const worker = async () => {
         while (queue.length > 0) {
           const file = queue.shift();
           if (!file) break;
 
-          await uploadSingleFile(file, token);
+          await uploadSingleFile(file, targetFolder, token);
           completedCount += 1;
           const pct = Math.floor((completedCount / totalFiles) * 100);
           setProgress(pct);
-          setCurrentStep(`Uploaded ${completedCount} of ${totalFiles} photos (${pct}%)...`);
+          setCurrentStep(`Uploaded ${completedCount} of ${totalFiles} photos to "${targetFolder}" (${pct}%)...`);
         }
       };
 
@@ -119,7 +127,7 @@ export default function ManualUpload() {
 
       setStatus("success");
       setFiles([]);
-      setCurrentStep("All photos uploaded successfully! Server is indexing faces into the live gallery.");
+      setCurrentStep(`All photos uploaded to "${targetFolder}"! Server is indexing faces into the live gallery.`);
     } catch (e: any) {
       console.error(e);
       setErrorMessage(e.message || String(e));
@@ -139,22 +147,31 @@ export default function ManualUpload() {
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden p-6 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-neutral-400">Target Folder / Category</label>
+            <label htmlFor="manual-upload-folder" className="text-sm font-medium text-neutral-400">
+              Target Folder / Category
+            </label>
             <select 
+              id="manual-upload-folder"
               value={activeFolder} 
               onChange={(e) => setActiveFolder(e.target.value)}
-              className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-rose-500"
+              disabled={uploading}
+              className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-rose-500 disabled:opacity-60"
             >
-              <option value="Engagement">Engagement</option>
-              <option value="Haldi">Haldi</option>
-              <option value="Mehendi">Mehendi</option>
-              <option value="Sangeet">Sangeet</option>
-              <option value="Ceremony">Ceremony</option>
-              <option value="Reception">Reception</option>
-              <option value="Guests">Guests</option>
-              <option value="Decor">Decor</option>
-              <option value="Uncategorized">Uncategorized</option>
+              <optgroup label="Wedding Events">
+                {GALLERY_EVENT_FOLDERS.map((folder) => (
+                  <option key={folder} value={folder}>{folder}</option>
+                ))}
+              </optgroup>
+              <optgroup label="Couple Portraits & Other">
+                {GALLERY_PERSON_CATEGORIES.map((folder) => (
+                  <option key={folder} value={folder}>{folder}</option>
+                ))}
+                <option value="Uncategorized">Uncategorized (Auto-sort by AI)</option>
+              </optgroup>
             </select>
+            <p className="text-xs text-neutral-500">
+              Matches the gallery folders directly. Event folders are preserved while AI also tags Bride/Groom faces automatically.
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -273,7 +290,7 @@ export default function ManualUpload() {
             <CheckCircle className="w-5 h-5 mr-3 shrink-0" />
             <div>
               <p className="font-medium">Upload Complete!</p>
-              <p className="text-sm opacity-80">Photos were uploaded and are actively being indexed with face recognition into the live gallery.</p>
+              <p className="text-sm opacity-80">Photos were uploaded to &ldquo;{uploadedFolder}&rdquo; and are actively being indexed with face recognition into the live gallery.</p>
             </div>
           </div>
         )}

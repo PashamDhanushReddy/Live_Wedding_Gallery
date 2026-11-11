@@ -94,7 +94,7 @@ object StorageMonitor {
         try {
             val ftpDir = File(context.filesDir, "ftp")
             val now = System.currentTimeMillis()
-            ftpDir.listFiles()?.forEach { f ->
+            ftpDir.walkTopDown().forEach { f ->
                 if (f.isFile && (now - f.lastModified() > 60000L)) {
                     val validation = FileIntegrityValidator.validateFile(f)
                     if (validation is FileIntegrityValidator.ValidationResult.Valid && db.isDuplicateChecksum(validation.checksumSha256)) {
@@ -104,10 +104,16 @@ object StorageMonitor {
             }
         } catch (_: Exception) {}
 
-        // 3. Clear app cache directory (temporary bitmap conversions and resized files)
+        // 3. Clear stale cache files (> 30 min old) without deleting active in-flight opt_ uploads
         try {
+            val cacheNow = System.currentTimeMillis()
             context.cacheDir.listFiles()?.forEach { f ->
-                if (f.isFile) f.delete()
+                if (f.isFile) {
+                    val isActiveOpt = f.name.startsWith("opt_") && (cacheNow - f.lastModified() < 30 * 60 * 1000L)
+                    if (!isActiveOpt) {
+                        f.delete()
+                    }
+                }
             }
         } catch (_: Exception) {}
 

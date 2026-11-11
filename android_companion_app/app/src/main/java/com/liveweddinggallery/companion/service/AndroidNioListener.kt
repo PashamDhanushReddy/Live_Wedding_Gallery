@@ -71,9 +71,9 @@ class AndroidNioListener(
             }
 
             nioAcceptor.isReuseAddress = true
-            nioAcceptor.sessionConfig.readBufferSize = 2048
+            nioAcceptor.sessionConfig.readBufferSize = 8192
             nioAcceptor.sessionConfig.setIdleTime(IdleStatus.BOTH_IDLE, idleTimeout)
-            nioAcceptor.sessionConfig.receiveBufferSize = 512
+            nioAcceptor.sessionConfig.receiveBufferSize = 8192
 
             val mdcFilter = MdcInjectionFilter()
             nioAcceptor.filterChain.addLast("mdcFilter", mdcFilter)

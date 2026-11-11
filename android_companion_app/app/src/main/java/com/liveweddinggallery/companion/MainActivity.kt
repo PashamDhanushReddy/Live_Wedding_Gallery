@@ -92,12 +92,13 @@ class MainActivity : AppCompatActivity() {
     private fun setupFolderSpinner() {
         val folders = arrayOf(
             "Engagement",
-            "Bride & Groom",
             "Pre-wedding Shoot",
             "Haldi",
             "Before Wedding Rituals",
             "Wedding Day",
-            "Reception",
+            "Bride and Groom",
+            "Bride",
+            "Groom",
             "Uncategorized"
         )
 
@@ -106,7 +107,13 @@ class MainActivity : AppCompatActivity() {
         spinnerFolder.adapter = adapter
 
         val prefs = getSharedPreferences("WeddingCompanion", Context.MODE_PRIVATE)
-        val savedFolder = prefs.getString("current_folder", "Wedding Day")
+        val rawSaved = prefs.getString("current_folder", "Wedding Day")
+        val savedFolder = if (rawSaved == "Bride & Groom") {
+            prefs.edit().putString("current_folder", "Bride and Groom").apply()
+            "Bride and Groom"
+        } else {
+            rawSaved
+        }
         val position = folders.indexOf(savedFolder)
         if (position >= 0) {
             spinnerFolder.setSelection(position)

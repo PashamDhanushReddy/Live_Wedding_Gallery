@@ -194,7 +194,11 @@ class FtpServerService : Service() {
                 name = ftpUser
                 password = ftpPass
                 homeDirectory = ftpDir.absolutePath
-                authorities = listOf(WritePermission())
+                authorities = listOf(
+                    WritePermission(),
+                    org.apache.ftpserver.usermanager.impl.ConcurrentLoginPermission(0, 0),
+                    org.apache.ftpserver.usermanager.impl.TransferRatePermission(0, 0)
+                )
             }
 
             // 4. Attach User to Server

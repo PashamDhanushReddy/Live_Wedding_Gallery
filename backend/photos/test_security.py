@@ -146,6 +146,7 @@ class EndpointSecurityContractTests(unittest.TestCase):
         self.assertTrue(any(isinstance(p, AllowAny) for p in perms), "GET must allow public viewing")
 
     def test_rate_limiting_scopes_configured(self):
+        from rest_framework.throttling import AnonRateThrottle, ScopedRateThrottle
         from weddings.views import FaceSearchView, PhotographerLoginView
         from photos.views import PhoneUploadView, ManualUploadView, PhoneAuthView
 
@@ -154,6 +155,11 @@ class EndpointSecurityContractTests(unittest.TestCase):
         self.assertEqual(getattr(PhoneUploadView, 'throttle_scope', None), 'photo_upload')
         self.assertEqual(getattr(ManualUploadView, 'throttle_scope', None), 'photo_upload')
         self.assertEqual(getattr(PhoneAuthView, 'throttle_scope', None), 'photographer_login')
+        # Batch upload endpoints authenticate via device key / photographer token (not DRF session user),
+        # so they must isolate throttling to ScopedRateThrottle instead of sharing AnonRateThrottle with guests.
+        self.assertEqual(getattr(PhoneUploadView, 'throttle_classes', None), [ScopedRateThrottle])
+        self.assertEqual(getattr(ManualUploadView, 'throttle_classes', None), [ScopedRateThrottle])
+        self.assertFalse(any(isinstance(t, AnonRateThrottle) for t in PhoneUploadView().get_throttles()))
 
 
 

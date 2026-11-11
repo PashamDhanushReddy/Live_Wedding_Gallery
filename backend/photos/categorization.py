@@ -90,13 +90,16 @@ def categorize_photo(photo):
     # If photo already belongs to an event folder (Haldi, Wedding Day, Pre-wedding Shoot, etc.),
     # NEVER overwrite it! Keep the photographer's explicit folder assignment intact.
     # Only assign AI folder if the folder is empty, "Uncategorized", or was previously an AI category.
+    current_folder = (photo.folder or "").strip()
     is_event_folder = bool(
-        photo.folder and photo.folder.strip() not in [
+        current_folder and current_folder not in [
             "Bride", "Groom", "Bride and Groom", "Uncategorized", ""
         ]
     )
     if not is_event_folder:
-        target_folder = new_ai_category or "Uncategorized"
+        target_folder = new_ai_category or (
+            current_folder if current_folder in ["Bride", "Groom", "Bride and Groom"] else "Uncategorized"
+        )
         if photo.folder != target_folder:
             photo.folder = target_folder
             changed = True

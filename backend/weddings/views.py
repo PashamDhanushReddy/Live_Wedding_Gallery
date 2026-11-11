@@ -134,11 +134,14 @@ class WeddingPhotosView(generics.ListAPIView):
                 )
             else:
                 # Event folder filter: matches photos uploaded to this event folder (Haldi, Wedding Day, etc.)
-                qs = qs.filter(
+                folder_q = (
                     models.Q(folder__iexact=f_norm) |
                     models.Q(folder__iexact=f_space) |
                     models.Q(folder__iexact=f_under)
                 )
+                if f_norm.lower() == 'uncategorized':
+                    folder_q |= models.Q(folder__isnull=True) | models.Q(folder='')
+                qs = qs.filter(folder_q)
             
         # 2. Exact date filter (YYYY-MM-DD) or date range
         date_param = self.request.query_params.get('date')
@@ -205,7 +208,8 @@ class WeddingPhotosView(generics.ListAPIView):
             cached_page = cache.get(first_page_cache_key)
             if cached_page is not None:
                 resp = Response(cached_page)
-                resp['Cache-Control'] = 'public, max-age=15, stale-while-revalidate=45'
+                resp['Cache-Control'] = 'private, no-cache'
+                resp['Vary'] = 'Authorization'
                 resp['X-Cache'] = 'HIT'
                 return resp
 
@@ -220,14 +224,19 @@ class WeddingPhotosView(generics.ListAPIView):
                 if cached_count is not None:
                     paginator.total_count = cached_count
                 else:
-                    paginator.total_count = queryset.count()
+                    paginator.total_count = (
+                        queryset.count()
+                        if hasattr(queryset, 'count') and not isinstance(queryset, (list, tuple))
+                        else len(queryset)
+                    )
                     cache.set(count_cache_key, paginator.total_count, timeout=30)
 
             page = paginator.paginate_queryset(queryset, request, view=self)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
                 response = paginator.get_paginated_response(serializer.data)
-                response['Cache-Control'] = 'public, max-age=15, stale-while-revalidate=45'
+                response['Cache-Control'] = 'private, no-cache'
+                response['Vary'] = 'Authorization'
                 response['X-Cache'] = 'MISS'
                 if is_first_page:
                     cache.set(first_page_cache_key, response.data, timeout=15)
@@ -235,7 +244,8 @@ class WeddingPhotosView(generics.ListAPIView):
                 
         serializer = self.get_serializer(queryset, many=True)
         response = Response(serializer.data)
-        response['Cache-Control'] = 'public, max-age=15, stale-while-revalidate=45'
+        response['Cache-Control'] = 'private, no-cache'
+        response['Vary'] = 'Authorization'
         response['X-Cache'] = 'MISS'
         return response
 

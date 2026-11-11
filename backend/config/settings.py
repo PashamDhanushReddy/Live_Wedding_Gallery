@@ -130,7 +130,7 @@ REST_FRAMEWORK = {
         'anon': '120/min',
         'user': '1000/min',
         'face_search': '15/min',
-        'photo_upload': '120/min',
+        'photo_upload': os.environ.get('DEFAULT_THROTTLE_RATES_PHOTO_UPLOAD', '600/min'),
         'photographer_login': '10/min',
     }
 }
@@ -289,6 +289,11 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",  # Vite local development
     "http://127.0.0.1:5173",
     "https://live-wedding-gallery.onrender.com",
+]
+from corsheaders.defaults import default_headers
+CORS_ALLOW_HEADERS = list(default_headers) + [
+    "x-photographer-token",
+    "x-device-id",
 ]
 
 CSRF_TRUSTED_ORIGINS = [

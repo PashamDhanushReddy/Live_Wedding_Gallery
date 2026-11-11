@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
+from rest_framework.throttling import ScopedRateThrottle
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.http import HttpResponseRedirect
@@ -319,6 +320,7 @@ class PhoneUploadView(APIView):
     Accepts chunked streams, stages to disk without memory bloat, creates durable
     IngestionJob record, performs fast content deduplication, and returns HTTP 202 Accepted.
     """
+    throttle_classes = [ScopedRateThrottle]
     throttle_scope = 'photo_upload'
 
     def post(self, request, slug):
@@ -450,6 +452,7 @@ class ManualUploadView(APIView):
     """
     Web dashboard batch manual upload. Uses chunked staging and durable IngestionJob queue.
     """
+    throttle_classes = [ScopedRateThrottle]
     throttle_scope = 'photo_upload'
 
     def post(self, request, slug):
@@ -458,7 +461,7 @@ class ManualUploadView(APIView):
         if not is_auth:
             return Response({'error': auth_err}, status=status.HTTP_401_UNAUTHORIZED)
 
-        folder = request.data.get('folder', 'Uncategorized')
+        folder = (request.data.get('folder') or '').strip() or 'Uncategorized'
         photos = request.FILES.getlist('photos')
         
         if not photos:
@@ -489,6 +492,13 @@ class ManualUploadView(APIView):
                 # Check duplicate
                 existing_photo = Photo.objects.filter(wedding=wedding, checksum=job.checksum).first()
                 if existing_photo:
+                    if folder != 'Uncategorized' and existing_photo.folder != folder:
+                        old_folder = existing_photo.folder
+                        existing_photo.folder = folder
+                        existing_photo.save(update_fields=['folder'])
+                        from photos.realtime import invalidate_gallery_cache
+                        invalidate_gallery_cache(wedding.id, wedding.slug, old_folder)
+                        invalidate_gallery_cache(wedding.id, wedding.slug, folder)
                     job.photo = existing_photo
                     job.status = 'COMPLETED'
                     job.completed_at = timezone.now()

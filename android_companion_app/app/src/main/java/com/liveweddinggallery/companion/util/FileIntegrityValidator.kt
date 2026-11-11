@@ -75,20 +75,21 @@ object FileIntegrityValidator {
                 }
 
                 // Check EOI (End of Image): 0xFF, 0xD9
-                // Note: Some cameras have up to a few trailing null/padding bytes after EOI
-                val searchBytes = Math.min(length, 128L).toInt()
+                // Cameras (e.g., Sony MPF/MakerNote, XMP/IPTC trailers, or padding) can have >128 trailing bytes after EOI.
+                val searchBytes = Math.min(length, 65536L).toInt()
                 val tail = ByteArray(searchBytes)
                 raf.seek(length - searchBytes)
                 raf.readFully(tail)
 
-                var foundEoi = false
+                var hasEoi = false
                 for (i in tail.size - 2 downTo 0) {
                     if (tail[i] == 0xFF.toByte() && tail[i + 1] == 0xD9.toByte()) {
-                        foundEoi = true
+                        hasEoi = true
                         break
                     }
                 }
-                return foundEoi
+                if (!hasEoi) return false
+                return true
             }
         } catch (_: Exception) {
             return false

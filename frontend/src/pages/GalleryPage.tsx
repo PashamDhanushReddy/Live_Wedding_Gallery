@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from "react";
 import { Calendar, MapPin, Heart, Grid, Crown, Search, X, ShieldCheck, RefreshCw, Sparkles } from "lucide-react";
-import { WEDDING_SLUG } from "../config";
+import { WEDDING_SLUG, GALLERY_TABS } from "../config";
 import { useWeddingRealtime } from "../hooks/useWeddingRealtime";
 import { useDebounce } from "../hooks/useDebounce";
 import GalleryPhotoCard, { type GalleryPhotoItem } from "../components/ui/GalleryPhotoCard";
@@ -67,18 +67,7 @@ export default function GalleryPage() {
     setIsFaceScanned(false);
   };
 
-  const tabs = useMemo(() => [
-    "All",
-    "Bride",
-    "Groom",
-    "Bride and Groom",
-    "Engagement",
-    "Pre-wedding Shoot",
-    "Haldi",
-    "Before Wedding Rituals",
-    "Wedding Day",
-    "Uncategorized"
-  ], []);
+  const tabs = GALLERY_TABS;
 
   // Filter among the guest's face-matched photos
   const filteredPhotos = useMemo(() => {
@@ -123,6 +112,7 @@ export default function GalleryPage() {
     },
     onDeletePhoto: handleDeletePhoto,
     onTotalCountChange: () => {},
+    enableApiSync: false,
   });
 
   const openLightbox = useCallback((index: number) => {

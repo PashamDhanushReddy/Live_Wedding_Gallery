@@ -159,6 +159,14 @@ class WeddingViewAuthorizationAndFilteringTests(SimpleTestCase):
             mock_get_qs.return_value = mock_qs
             resp = view(req, slug='test-slug')
             self.assertEqual(resp.status_code, status.HTTP_200_OK)
+            self.assertEqual(resp['Cache-Control'], 'private, no-cache')
+            self.assertIn('Authorization', resp['Vary'])
+
+    def test_cors_allows_photographer_headers(self):
+        """CORS preflight must allow custom photographer/device headers."""
+        from django.conf import settings
+        self.assertIn('x-photographer-token', settings.CORS_ALLOW_HEADERS)
+        self.assertIn('x-device-id', settings.CORS_ALLOW_HEADERS)
 
 
 class WebSocketConsumerProtocolTests(SimpleTestCase):
@@ -211,3 +219,78 @@ class WebSocketConsumerProtocolTests(SimpleTestCase):
             success = broadcast_new_photo(mock_photo)
             self.assertFalse(success)
             mock_layer_getter.assert_not_called()
+
+
+class FolderPreservationTests(SimpleTestCase):
+    """Tests folder preservation and correction across manual upload and AI categorization."""
+
+    def test_categorize_photo_preserves_event_and_explicit_portrait_folders(self):
+        from photos.categorization import categorize_photo
+
+        mock_wedding = MagicMock(bride_embedding=[1.0, 0.0], groom_embedding=[0.0, 1.0])
+
+        # Event folder must never be overwritten even if faces match Bride
+        event_photo = MagicMock(
+            wedding=mock_wedding,
+            folder='Wedding Day',
+            ai_category=None,
+        )
+        event_photo.faces.all.return_value = [MagicMock(width=200, height=200, embedding=[1.0, 0.0])]
+        self.assertTrue(categorize_photo(event_photo))
+        self.assertEqual(event_photo.folder, 'Wedding Day')
+        self.assertEqual(event_photo.ai_category, 'Bride')
+
+        # Explicit portrait folder must not be downgraded to Uncategorized on miss
+        portrait_photo = MagicMock(
+            wedding=mock_wedding,
+            folder='Bride',
+            ai_category=None,
+        )
+        portrait_photo.faces.all.return_value = []
+        self.assertFalse(categorize_photo(portrait_photo))
+        self.assertEqual(portrait_photo.folder, 'Bride')
+
+    @patch('photos.realtime.invalidate_gallery_cache')
+    @patch('photos.views.stage_uploaded_file')
+    @patch('photos.views.Photo.objects')
+    @patch('photos.views.IngestionJob.objects')
+    @patch('photos.views.authenticate_photographer_or_device')
+    @patch('photos.views.get_object_or_404')
+    def test_manual_upload_updates_folder_for_duplicate_photo(
+        self, mock_get_wedding, mock_auth, mock_job_mgr, mock_photo_mgr, mock_stage, mock_inval
+    ):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from photos.views import ManualUploadView
+
+        mock_wedding = MagicMock(id=7, slug='test-slug', is_active=True)
+        mock_get_wedding.return_value = mock_wedding
+        mock_auth.return_value = (True, None, None)
+
+        mock_job = MagicMock(job_id='job-123', staging_path=None)
+        mock_job_mgr.create.return_value = mock_job
+        mock_stage.return_value = {
+            'staging_path': None,
+            'checksum': 'abc123',
+            'file_size': 1024,
+            'mime_type': 'image/jpeg',
+            'original_filename': 'shot.jpg',
+        }
+
+        existing_photo = MagicMock(folder='Ceremony')
+        mock_photo_mgr.filter.return_value.first.return_value = existing_photo
+
+        req = APIRequestFactory().post(
+            '/api/weddings/test-slug/photographer/upload/',
+            data={
+                'folder': 'Wedding Day',
+                'photos': SimpleUploadedFile('shot.jpg', b'fake-jpeg', content_type='image/jpeg'),
+            },
+            format='multipart',
+        )
+        resp = ManualUploadView.as_view()(req, slug='test-slug')
+
+        self.assertEqual(resp.status_code, status.HTTP_202_ACCEPTED)
+        self.assertEqual(existing_photo.folder, 'Wedding Day')
+        existing_photo.save.assert_called_with(update_fields=['folder'])
+        mock_inval.assert_any_call(7, 'test-slug', 'Ceremony')
+        mock_inval.assert_any_call(7, 'test-slug', 'Wedding Day')

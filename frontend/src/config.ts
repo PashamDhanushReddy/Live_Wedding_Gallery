@@ -12,3 +12,24 @@ export const WS_BASE_URL: string =
 // Wedding slug dynamically configurable or defaults to Sandeep & Prathyusha
 export const WEDDING_SLUG: string = 
   import.meta.env.VITE_WEDDING_SLUG || 'sandeep-prathyusha';
+
+export const GALLERY_EVENT_FOLDERS: readonly string[] = [
+  "Engagement",
+  "Pre-wedding Shoot",
+  "Haldi",
+  "Before Wedding Rituals",
+  "Wedding Day",
+];
+
+export const GALLERY_PERSON_CATEGORIES: readonly string[] = [
+  "Bride",
+  "Groom",
+  "Bride and Groom",
+];
+
+export const GALLERY_TABS: readonly string[] = [
+  "All",
+  ...GALLERY_PERSON_CATEGORIES,
+  ...GALLERY_EVENT_FOLDERS,
+  "Uncategorized",
+];

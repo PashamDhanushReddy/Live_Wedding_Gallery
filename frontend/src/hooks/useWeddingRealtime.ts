@@ -10,6 +10,8 @@ export interface UseWeddingRealtimeOptions<T> {
   onNewPhotos: (photos: T[]) => void;
   onDeletePhoto: (photoId: number) => void;
   onTotalCountChange: (updater: (prev: number) => number) => void;
+  authToken?: string | null;
+  enableApiSync?: boolean;
 }
 
 export function useWeddingRealtime<T extends { id: number; category?: string }>({
@@ -19,6 +21,8 @@ export function useWeddingRealtime<T extends { id: number; category?: string }>(
   onNewPhotos,
   onDeletePhoto,
   onTotalCountChange,
+  authToken = null,
+  enableApiSync = true,
 }: UseWeddingRealtimeOptions<T>) {
   const [connectionStatus, setConnectionStatus] = useState<RealtimeStatus>('connecting');
   const [lastSyncTime, setLastSyncTime] = useState<Date>(new Date());
@@ -43,6 +47,8 @@ export function useWeddingRealtime<T extends { id: number; category?: string }>(
     onNewPhotos,
     onDeletePhoto,
     onTotalCountChange,
+    authToken,
+    enableApiSync,
   });
 
   useEffect(() => {
@@ -53,17 +59,29 @@ export function useWeddingRealtime<T extends { id: number; category?: string }>(
       onNewPhotos,
       onDeletePhoto,
       onTotalCountChange,
+      authToken,
+      enableApiSync,
     };
-  }, [slug, activeTab, mapPhoto, onNewPhotos, onDeletePhoto, onTotalCountChange]);
+  }, [slug, activeTab, mapPhoto, onNewPhotos, onDeletePhoto, onTotalCountChange, authToken, enableApiSync]);
 
   // Clean, debounced fetch of latest photos via paginated API
   const fetchLatestPage = useCallback(async () => {
+    if (!optionsRef.current.enableApiSync) return;
     try {
       const currentTab = optionsRef.current.activeTab;
-      const folderParam = currentTab !== 'All' ? `?folder=${encodeURIComponent(currentTab)}` : '';
-      const url = `${API_BASE_URL}/weddings/${optionsRef.current.slug}/photos/${folderParam}`;
+      const params = new URLSearchParams({ page_size: '50' });
+      if (currentTab !== 'All') {
+        params.set('folder', currentTab);
+      }
+      const url = `${API_BASE_URL}/weddings/${optionsRef.current.slug}/photos/?${params.toString()}`;
 
-      const res = await fetch(url);
+      const token = optionsRef.current.authToken;
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Token ${token}`;
+      }
+
+      const res = await fetch(url, { headers });
       if (!res.ok) return;
 
       const data = await res.json();
@@ -208,7 +226,12 @@ export function useWeddingRealtime<T extends { id: number; category?: string }>(
 
             // Fetch actual photo metadata using the paginated API
             const currentTab = optionsRef.current.activeTab;
-            if (currentTab === 'All' || !data.folder || data.folder === currentTab) {
+            if (
+              currentTab === 'All' ||
+              !data.folder ||
+              data.folder === currentTab ||
+              data.ai_category === currentTab
+            ) {
               triggerDebouncedSync();
             }
           } else if (data.type === 'delete_photo') {
