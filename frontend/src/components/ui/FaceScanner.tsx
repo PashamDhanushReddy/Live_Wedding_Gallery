@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Camera, RefreshCw, Upload, Lock, ShieldCheck, AlertCircle, Sparkles } from "lucide-react";
+import { Camera, RefreshCw, Upload, Lock, ShieldCheck, AlertCircle, Sparkles, X, ScanFace } from "lucide-react";
 import { API_BASE_URL, WEDDING_SLUG } from "../../config";
 import type { GalleryPhotoItem } from "./GalleryPhotoCard";
 
 interface FaceScannerProps {
   onPhotosFound: (photos: GalleryPhotoItem[], selfieDataUrl: string, totalMatches: number) => void;
-  onClose?: () => void;
   isOverlay?: boolean;
 }
 
@@ -30,32 +29,41 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
   const autoScanTimerRef = useRef<any>(null);
 
   const [isCameraActive, setIsCameraActive] = useState(false);
-  const [isStartingCamera, setIsStartingCamera] = useState(true);
+  const [isStartingCamera, setIsStartingCamera] = useState(false);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [statusMessage, setStatusMessage] = useState<string>("Initializing secure face scanner...");
-  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string>("Camera is closed. Tap below to begin face scan.");
   const [scanStatus, setScanStatus] = useState<"idle" | "scanning" | "processing" | "no_match" | "no_face" | "error">("idle");
   const [capturedThumbnail, setCapturedThumbnail] = useState<string | null>(null);
 
+  // Closes camera hardware immediately and releases all tracks
   const stopCamera = () => {
     if (autoScanTimerRef.current) {
       clearInterval(autoScanTimerRef.current);
       autoScanTimerRef.current = null;
     }
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current.getTracks().forEach((track) => {
+        try {
+          track.stop();
+        } catch (_) {}
+      });
       streamRef.current = null;
     }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
     setIsCameraActive(false);
+    setIsStartingCamera(false);
+    setCountdown(null);
   };
 
+  // Only open camera when actively scanning the face
   const startCamera = async () => {
     stopCamera();
-    setCameraError(null);
     setIsStartingCamera(true);
     setScanStatus("scanning");
-    setStatusMessage("Requesting camera access...");
+    setStatusMessage("Opening camera for face scan...");
 
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -79,7 +87,7 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
       setIsStartingCamera(false);
       setStatusMessage("Align your face in the oval frame...");
 
-      // Start a smooth 2-second countdown for hands-free auto-scan
+      // 2-second countdown for auto-capture, after which camera is closed instantly
       let timeLeft = 2;
       setCountdown(timeLeft);
       autoScanTimerRef.current = setInterval(() => {
@@ -97,17 +105,17 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
       console.warn("Camera access failed:", err);
       setIsStartingCamera(false);
       setIsCameraActive(false);
-      setCameraError(
+      setScanStatus("error");
+      setStatusMessage(
         err.name === "NotAllowedError" || err.name === "PermissionDeniedError"
           ? "Camera permission was denied. You can allow camera in browser settings or upload a selfie below."
           : "Could not open camera on this device. Please upload a selfie to access your photos."
       );
-      setScanStatus("error");
     }
   };
 
+  // Unmount safety: guarantee camera is stopped if component unmounts
   useEffect(() => {
-    startCamera();
     return () => {
       stopCamera();
     };
@@ -140,12 +148,37 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
     });
   };
 
+  const handleTriggerScan = async () => {
+    if (autoScanTimerRef.current) {
+      clearInterval(autoScanTimerRef.current);
+      autoScanTimerRef.current = null;
+      setCountdown(null);
+    }
+
+    // 1. Capture snapshot from active stream
+    const captured = await captureFrameBlob();
+
+    // 2. IMMEDIATELY CLOSE THE CAMERA right after scanning the face
+    stopCamera();
+
+    if (!captured) {
+      setScanStatus("error");
+      setStatusMessage("Could not capture frame. Please retry.");
+      return;
+    }
+
+    // 3. Process the captured selfie with camera hardware completely off
+    await processSelfie(captured.blob, captured.dataUrl);
+  };
+
   const processSelfie = async (fileOrBlob: Blob, previewUrl: string) => {
+    // Double guarantee camera is off
+    stopCamera();
+
     setIsProcessing(true);
     setScanStatus("processing");
     setStatusMessage("Searching wedding photos with facial AI...");
     setCapturedThumbnail(previewUrl);
-    stopCamera();
 
     const formData = new FormData();
     formData.append("file", fileOrBlob, "guest_selfie.jpg");
@@ -188,21 +221,6 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
     }
   };
 
-  const handleTriggerScan = async () => {
-    if (autoScanTimerRef.current) {
-      clearInterval(autoScanTimerRef.current);
-      autoScanTimerRef.current = null;
-      setCountdown(null);
-    }
-    const captured = await captureFrameBlob();
-    if (!captured) {
-      setScanStatus("error");
-      setStatusMessage("Could not capture camera frame. Please retry.");
-      return;
-    }
-    await processSelfie(captured.blob, captured.dataUrl);
-  };
-
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -222,15 +240,16 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
         </div>
 
         <h2 className="font-serif text-2xl sm:text-3xl text-[#2d2626] font-medium mb-2">
-          Find Your Photos
+          Unlock Your Photos
         </h2>
         <p className="text-xs sm:text-sm text-[#736363] max-w-sm mx-auto mb-6 leading-relaxed">
-          To protect everyone's privacy, our live gallery only displays photos featuring you. Look into the camera to unlock your memories.
+          To protect everyone's privacy, our live gallery only displays photos featuring you. The camera will briefly scan your face and close immediately.
         </p>
 
         {/* Camera / Viewfinder Box */}
         <div className="relative w-64 h-64 sm:w-72 sm:h-72 mx-auto rounded-3xl overflow-hidden bg-neutral-900 border-2 border-[#a67272]/30 shadow-inner flex items-center justify-center mb-6">
           
+          {/* Active Camera View (ONLY active during face scan) */}
           {isCameraActive && (
             <>
               <video
@@ -260,22 +279,32 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
                   </p>
                 </div>
               )}
+
+              {/* Close/Cancel Camera Button during active scan */}
+              <button
+                type="button"
+                onClick={stopCamera}
+                className="absolute top-3 right-3 p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full transition-colors cursor-pointer"
+                title="Cancel & close camera"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </>
           )}
 
-          {/* Fallback / Processing / Error view inside viewfinder */}
+          {/* Camera Closed / Processing / Thumbnail / Idle states */}
           {!isCameraActive && (
             <div className="flex flex-col items-center justify-center p-6 text-center text-white/80">
               {isStartingCamera ? (
                 <>
                   <RefreshCw className="w-10 h-10 animate-spin text-[#b36c73] mb-3" />
-                  <p className="text-xs font-medium text-white/90">Starting camera...</p>
+                  <p className="text-xs font-medium text-white/90">Opening camera...</p>
                 </>
               ) : isProcessing ? (
                 <>
                   <Sparkles className="w-12 h-12 text-[#b36c73] animate-bounce mb-3" />
-                  <p className="text-xs font-medium text-white">Analyzing facial biometrics...</p>
-                  <p className="text-[11px] text-white/60 mt-1">Searching gallery photos</p>
+                  <p className="text-xs font-medium text-white">Matching face biometrics...</p>
+                  <p className="text-[11px] text-white/60 mt-1">Camera is now closed</p>
                 </>
               ) : capturedThumbnail ? (
                 <div className="relative w-full h-full">
@@ -284,14 +313,17 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
                     alt="Captured Face"
                     className="w-full h-full object-cover rounded-2xl"
                   />
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                    <p className="text-xs text-white px-2 py-1 bg-black/60 rounded-md">Scanned Face</p>
+                  <div className="absolute bottom-2 left-2 right-2 bg-black/70 py-1 px-2 rounded-lg text-center">
+                    <p className="text-[11px] text-white font-medium">Camera Closed (Scanned)</p>
                   </div>
                 </div>
               ) : (
                 <>
-                  <Camera className="w-12 h-12 text-white/40 mb-3" />
-                  <p className="text-xs font-medium text-white/80">Camera Inactive</p>
+                  <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center mb-3">
+                    <Camera className="w-8 h-8 text-white/60" />
+                  </div>
+                  <p className="text-sm font-medium text-white">Camera Offline</p>
+                  <p className="text-[11px] text-white/50 mt-1">Turns on only during face scan</p>
                 </>
               )}
             </div>
@@ -314,6 +346,7 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
 
         {/* Actions / Buttons */}
         <div className="flex flex-col gap-3">
+          {/* When camera is active: Capture button */}
           {isCameraActive && (
             <button
               type="button"
@@ -322,30 +355,31 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
               className="w-full bg-[#a67272] text-white py-3.5 rounded-full font-medium text-sm hover:bg-[#8f5e5e] transition-all shadow-md active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
             >
               <Camera className="w-4 h-4" />
-              Scan My Face Now
+              Capture & Close Camera
             </button>
           )}
 
-          {(!isCameraActive || cameraError || scanStatus === "no_face" || scanStatus === "no_match") && (
+          {/* When camera is offline: Start scan or upload selfie */}
+          {!isCameraActive && (
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 type="button"
                 onClick={startCamera}
                 disabled={isProcessing}
-                className="flex-1 bg-[#a67272] text-white py-3 rounded-full font-medium text-xs sm:text-sm hover:bg-[#8f5e5e] transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                className="flex-1 bg-[#a67272] text-white py-3.5 rounded-full font-medium text-xs sm:text-sm hover:bg-[#8f5e5e] transition-all shadow-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
               >
-                <RefreshCw className="w-4 h-4" />
-                Retry Camera Scan
+                <ScanFace className="w-4 h-4" />
+                {scanStatus === "idle" ? "Start Face Scan" : "Rescan Face"}
               </button>
               
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isProcessing}
-                className="flex-1 bg-white border border-[#f0e4dc] text-[#554c4c] py-3 rounded-full font-medium text-xs sm:text-sm hover:bg-[#fcf5f1] transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                className="flex-1 bg-white border border-[#f0e4dc] text-[#554c4c] py-3.5 rounded-full font-medium text-xs sm:text-sm hover:bg-[#fcf5f1] transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
               >
                 <Upload className="w-4 h-4 text-[#a67272]" />
-                Upload Selfie Instead
+                Upload Selfie
               </button>
             </div>
           )}
