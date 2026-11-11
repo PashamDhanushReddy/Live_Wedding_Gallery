@@ -51,7 +51,10 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
       streamRef.current = null;
     }
     if (videoRef.current) {
-      videoRef.current.srcObject = null;
+      try {
+        videoRef.current.pause();
+        videoRef.current.srcObject = null;
+      } catch (_) {}
     }
     setIsCameraActive(false);
     setIsStartingCamera(false);
@@ -70,25 +73,42 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
         throw new Error("Camera not supported on this browser.");
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: "user",
-          width: { ideal: 640 },
-          height: { ideal: 640 },
-        },
-        audio: false,
-      });
+      let stream: MediaStream;
+      try {
+        // 1. Try front/user facing camera with optimal dimensions
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: "user" },
+            width: { ideal: 1280, min: 480 },
+            height: { ideal: 720, min: 480 },
+          },
+          audio: false,
+        });
+      } catch (firstErr) {
+        console.warn("User facing constraint failed, attempting generic video:", firstErr);
+        // 2. Fallback to any default camera
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false,
+        });
+      }
 
       streamRef.current = stream;
+
+      // Connect stream to video element
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        try {
+          await videoRef.current.play();
+        } catch (_) {}
       }
+
       setIsCameraActive(true);
       setIsStartingCamera(false);
       setStatusMessage("Align your face in the oval frame...");
 
-      // 2-second countdown for auto-capture, after which camera is closed instantly
-      let timeLeft = 2;
+      // 3.5-second countdown to allow user to see their face and position comfortably
+      let timeLeft = 3;
       setCountdown(timeLeft);
       autoScanTimerRef.current = setInterval(() => {
         timeLeft -= 1;
@@ -108,11 +128,21 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
       setScanStatus("error");
       setStatusMessage(
         err.name === "NotAllowedError" || err.name === "PermissionDeniedError"
-          ? "Camera permission was denied. You can allow camera in browser settings or upload a selfie below."
+          ? "Camera permission was denied. Please allow camera in browser permissions, or upload a selfie."
           : "Could not open camera on this device. Please upload a selfie to access your photos."
       );
     }
   };
+
+  // Ensure stream stays bound whenever isCameraActive is toggled
+  useEffect(() => {
+    if (isCameraActive && videoRef.current && streamRef.current) {
+      if (videoRef.current.srcObject !== streamRef.current) {
+        videoRef.current.srcObject = streamRef.current;
+      }
+      videoRef.current.play().catch(() => {});
+    }
+  }, [isCameraActive]);
 
   // Unmount safety: guarantee camera is stopped if component unmounts
   useEffect(() => {
@@ -125,9 +155,12 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
     return new Promise((resolve) => {
       if (!videoRef.current) return resolve(null);
       const video = videoRef.current;
+      const width = video.videoWidth || 640;
+      const height = video.videoHeight || 480;
+
       const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 640;
+      canvas.width = width;
+      canvas.height = height;
       const ctx = canvas.getContext("2d");
       if (!ctx) return resolve(null);
 
@@ -136,7 +169,7 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
       ctx.scale(-1, 1);
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
       canvas.toBlob(
         (blob) => {
           if (blob) resolve({ blob, dataUrl });
@@ -249,20 +282,28 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
         {/* Camera / Viewfinder Box */}
         <div className="relative w-64 h-64 sm:w-72 sm:h-72 mx-auto rounded-3xl overflow-hidden bg-neutral-900 border-2 border-[#a67272]/30 shadow-inner flex items-center justify-center mb-6">
           
-          {/* Active Camera View (ONLY active during face scan) */}
+          {/* Always-mounted Video element ensuring videoRef.current is never null */}
+          <video
+            ref={videoRef}
+            autoPlay
+            playsInline
+            muted
+            onLoadedMetadata={async () => {
+              try {
+                if (videoRef.current) {
+                  await videoRef.current.play();
+                }
+              } catch (_) {}
+            }}
+            className={`w-full h-full object-cover -scale-x-100 ${isCameraActive ? "block" : "hidden"}`}
+          />
+
+          {/* Active Camera Overlay (ONLY visible when camera is active) */}
           {isCameraActive && (
             <>
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                muted
-                className="w-full h-full object-cover -scale-x-100"
-              />
-
               {/* Biometric Oval Mask Overlay */}
               <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                <div className="w-44 h-56 border-2 border-dashed border-white/60 rounded-[50%] shadow-[0_0_15px_rgba(255,255,255,0.3)] animate-pulse" />
+                <div className="w-44 h-56 border-2 border-dashed border-white/70 rounded-[50%] shadow-[0_0_15px_rgba(255,255,255,0.3)] animate-pulse" />
               </div>
 
               {/* Scanning Laser Line */}
@@ -270,7 +311,7 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
 
               {/* Countdown overlay */}
               {countdown !== null && (
-                <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] flex flex-col items-center justify-center text-white">
+                <div className="absolute inset-0 bg-black/30 backdrop-blur-[2px] flex flex-col items-center justify-center text-white pointer-events-none">
                   <span className="text-5xl font-bold font-serif drop-shadow-md animate-scale">
                     {countdown}
                   </span>
@@ -284,7 +325,7 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
               <button
                 type="button"
                 onClick={stopCamera}
-                className="absolute top-3 right-3 p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full transition-colors cursor-pointer"
+                className="absolute top-3 right-3 p-1.5 bg-black/60 hover:bg-black/80 text-white rounded-full transition-colors cursor-pointer z-10"
                 title="Cancel & close camera"
               >
                 <X className="w-4 h-4" />
@@ -346,7 +387,7 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
 
         {/* Actions / Buttons */}
         <div className="flex flex-col gap-3">
-          {/* When camera is active: Capture button */}
+          {/* When camera is active: Instant capture button */}
           {isCameraActive && (
             <button
               type="button"
@@ -355,7 +396,7 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
               className="w-full bg-[#a67272] text-white py-3.5 rounded-full font-medium text-sm hover:bg-[#8f5e5e] transition-all shadow-md active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
             >
               <Camera className="w-4 h-4" />
-              Capture & Close Camera
+              Capture & Scan Face
             </button>
           )}
 
