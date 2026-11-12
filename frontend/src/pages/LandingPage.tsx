@@ -6,7 +6,7 @@ import weddingLogo from "../assets/wedding-logo.png";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen relative overflow-hidden bg-[#faf7f5]">
+    <div className="min-h-screen relative overflow-x-hidden bg-[#faf7f5]">
       {/* Background for Desktop */}
       <div 
         className="absolute inset-0 w-full h-full bg-no-repeat bg-[length:100%_100%] opacity-40 z-0 pointer-events-none hidden md:block"

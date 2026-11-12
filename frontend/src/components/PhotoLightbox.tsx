@@ -84,9 +84,9 @@ export default function PhotoLightbox({ photos, initialIndex, onClose, onDelete 
     if (!el) return;
     const stopProp = (e: Event) => e.stopPropagation();
     
-    el.addEventListener('touchstart', stopProp, { passive: false });
-    el.addEventListener('touchmove', stopProp, { passive: false });
-    el.addEventListener('touchend', stopProp, { passive: false });
+    el.addEventListener('touchstart', stopProp, { passive: true });
+    el.addEventListener('touchmove', stopProp, { passive: true });
+    el.addEventListener('touchend', stopProp, { passive: true });
     el.addEventListener('pointerdown', stopProp);
     el.addEventListener('pointermove', stopProp);
     el.addEventListener('wheel', stopProp);
