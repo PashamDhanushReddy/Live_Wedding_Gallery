@@ -206,7 +206,30 @@ export default function VirtualCamera() {
     setConnectionLatency(null);
     const start = performance.now();
     try {
-      // Test wedding API endpoint (publicly verified 200 OK)
+      const token = localStorage.getItem("photographer_token");
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) headers["Authorization"] = `Token ${token}`;
+
+      if (config.targetProtocol === "FTP_COMPANION") {
+        // Register & handshake the camera connection with the backend
+        const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/photographer/camera/connect/`, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            host: config.ftpHost,
+            port: config.ftpPort,
+            username: config.ftpUser,
+          }),
+        });
+        const latency = Math.round(performance.now() - start);
+        if (res.ok) {
+          setConnectionTestStatus("success");
+          setConnectionLatency(latency);
+          return;
+        }
+      }
+
+      // Fast HTTP / Cloud handshake
       const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/`, {
         method: "GET",
       });
@@ -815,12 +838,12 @@ export default function VirtualCamera() {
                     ) : connectionTestStatus === "success" ? (
                       <>
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                        <span className="text-emerald-400">Backend Reachable ({connectionLatency}ms)</span>
+                        <span className="text-emerald-400">Camera Linked (:2121) • {connectionLatency}ms ACK</span>
                       </>
                     ) : connectionTestStatus === "failed" ? (
                       <>
                         <XCircle className="w-3.5 h-3.5 text-rose-400" />
-                        <span className="text-rose-400">Handshake Failed (Check Wi-Fi)</span>
+                        <span className="text-rose-400">Handshake Failed (Check login / connection)</span>
                       </>
                     ) : (
                       <>
