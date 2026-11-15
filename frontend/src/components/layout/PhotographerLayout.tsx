@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation, Navigate, useNavigate } from "react-router-dom";
-import { Camera, Activity, LayoutDashboard, LogOut, UploadCloud } from "lucide-react";
+import { Camera, Activity, LayoutDashboard, LogOut, UploadCloud, Aperture, Wifi } from "lucide-react";
 import clsx from "clsx";
 
 export default function PhotographerLayout() {
@@ -13,7 +13,8 @@ export default function PhotographerLayout() {
 
   const navItems = [
     { name: "Dashboard", path: "/photographer", icon: LayoutDashboard },
-    { name: "Camera", path: "/photographer/camera", icon: Camera },
+    { name: "Virtual Camera", path: "/photographer/virtual-camera", icon: Aperture },
+    { name: "Camera FTP Setup", path: "/photographer/camera", icon: Wifi },
     { name: "Live Transfers", path: "/photographer/transfers", icon: Activity },
     { name: "Manual Upload", path: "/photographer/upload", icon: UploadCloud },
     { name: "Manage Photos", path: "/photographer/manage", icon: Camera },

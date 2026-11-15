@@ -14,6 +14,7 @@ const PhotographerLogin = lazy(() => import("./pages/photographer/Login"));
 const PhotographerLayout = lazy(() => import("./components/layout/PhotographerLayout"));
 const PhotographerDashboard = lazy(() => import("./pages/photographer/Dashboard"));
 const CameraConnection = lazy(() => import("./pages/photographer/CameraConnection"));
+const VirtualCamera = lazy(() => import("./pages/photographer/VirtualCamera"));
 const LiveTransfers = lazy(() => import("./pages/photographer/LiveTransfers"));
 const ManualUpload = lazy(() => import("./pages/photographer/ManualUpload"));
 const AdminGallery = lazy(() => import("./pages/photographer/AdminGallery"));
@@ -43,6 +44,7 @@ function App() {
           
           <Route path="/photographer" element={<PhotographerLayout />}>
             <Route index element={<PhotographerDashboard />} />
+            <Route path="virtual-camera" element={<VirtualCamera />} />
             <Route path="camera" element={<CameraConnection />} />
             <Route path="transfers" element={<LiveTransfers />} />
             <Route path="upload" element={<ManualUpload />} />

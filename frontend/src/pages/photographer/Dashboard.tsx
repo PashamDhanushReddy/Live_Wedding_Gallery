@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Camera, HardDrive, Wifi, Server, CheckCircle2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Camera, HardDrive, Wifi, Server, CheckCircle2, Aperture, ArrowRight } from "lucide-react";
 import { API_BASE_URL, WEDDING_SLUG } from "../../config";
 
 export default function PhotographerDashboard() {
@@ -44,6 +45,26 @@ export default function PhotographerDashboard() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight text-white uppercase tracking-wider">Photographer Dashboard</h1>
         <p className="text-neutral-400 mt-2">Live Wedding: Sandeep Reddy & Prathyusha Reddy</p>
+      </div>
+
+      {/* Quick Launch: Virtual DSLR Camera & PhotoSync Hub */}
+      <div className="bg-gradient-to-r from-rose-950/40 via-neutral-900 to-neutral-900 border border-rose-500/30 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+        <div className="space-y-1">
+          <div className="flex items-center space-x-2 text-rose-400 font-bold text-sm tracking-wider uppercase">
+            <Aperture className="w-5 h-5" />
+            <span>Virtual DSLR Camera & PhotoSync Hub</span>
+          </div>
+          <p className="text-neutral-300 text-sm">
+            Turn your iPhone or Android phone into a virtual DSLR camera with live viewfinder, mechanical shutter sounds, and PhotoSync auto-transfer.
+          </p>
+        </div>
+        <Link
+          to="/photographer/virtual-camera"
+          className="px-5 py-3 bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 text-white font-bold text-sm rounded-xl transition-all shadow-lg flex items-center space-x-2 flex-shrink-0"
+        >
+          <span>Launch Camera</span>
+          <ArrowRight className="w-4 h-4" />
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
