@@ -206,7 +206,8 @@ export default function VirtualCamera() {
     setConnectionLatency(null);
     const start = performance.now();
     try {
-      const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/stats/`, {
+      // Test wedding API endpoint (publicly verified 200 OK)
+      const res = await fetch(`${API_BASE_URL}/weddings/${WEDDING_SLUG}/`, {
         method: "GET",
       });
       const latency = Math.round(performance.now() - start);
@@ -641,21 +642,27 @@ export default function VirtualCamera() {
 
             {/* Target Mode Selector */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-neutral-300 uppercase tracking-wider">
-                Ingestion Target Protocol
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-neutral-300 uppercase tracking-wider">
+                  Ingestion Target Protocol
+                </label>
+                <span className="text-[10px] text-rose-400 font-medium">Select Fast HTTP for Phone</span>
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setConfig((p) => ({ ...p, targetProtocol: "HTTP_INGESTION" }))}
                   className={`p-3 rounded-2xl border text-left transition-all ${
                     config.targetProtocol === "HTTP_INGESTION"
-                      ? "border-rose-500 bg-rose-500/10 text-white font-medium"
+                      ? "border-emerald-500 bg-emerald-500/10 text-white font-medium ring-1 ring-emerald-500/50"
                       : "border-neutral-800 bg-neutral-950 text-neutral-400 hover:border-neutral-700"
                   }`}
                 >
-                  <div className="text-xs font-bold">Fast HTTP/WS</div>
-                  <div className="text-[10px] text-neutral-400 mt-0.5">Live Ingestion (Fastest)</div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-emerald-400">Fast HTTP/WS</span>
+                    <span className="text-[9px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.5 rounded font-bold">BEST</span>
+                  </div>
+                  <div className="text-[10px] text-neutral-300 mt-1">Direct Cloud (4G / 5G / Wi-Fi)</div>
                 </button>
 
                 <button
@@ -663,12 +670,15 @@ export default function VirtualCamera() {
                   onClick={() => setConfig((p) => ({ ...p, targetProtocol: "FTP_COMPANION" }))}
                   className={`p-3 rounded-2xl border text-left transition-all ${
                     config.targetProtocol === "FTP_COMPANION"
-                      ? "border-rose-500 bg-rose-500/10 text-white font-medium"
+                      ? "border-amber-500 bg-amber-500/10 text-white font-medium ring-1 ring-amber-500/50"
                       : "border-neutral-800 bg-neutral-950 text-neutral-400 hover:border-neutral-700"
                   }`}
                 >
-                  <div className="text-xs font-bold">FTP Companion</div>
-                  <div className="text-[10px] text-neutral-400 mt-0.5">Port 2121 Edge Bridge</div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-400">FTP Companion</span>
+                    <span className="text-[9px] bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded font-bold">:2121</span>
+                  </div>
+                  <div className="text-[10px] text-neutral-400 mt-1">Requires Same Local Wi-Fi</div>
                 </button>
               </div>
             </div>
@@ -692,87 +702,136 @@ export default function VirtualCamera() {
               </select>
             </div>
 
-            {/* FTP Settings (PhotoSync Style) */}
-            <div className="space-y-3 bg-neutral-950 p-4 rounded-2xl border border-neutral-800/80">
-              <div className="text-xs font-bold text-neutral-300 flex items-center justify-between">
-                <span>FTP & Companion Host Details</span>
-                <span className="text-[10px] text-neutral-500 font-mono">:2121</span>
-              </div>
+            {/* Connection Details Section */}
+            {config.targetProtocol === "HTTP_INGESTION" ? (
+              <div className="space-y-3 bg-neutral-950 p-4 rounded-2xl border border-neutral-800/80">
+                <div className="text-xs font-bold text-emerald-400 flex items-center justify-between">
+                  <span>Cloud Ingestion Server</span>
+                  <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full font-mono">ONLINE</span>
+                </div>
+                <p className="text-[11px] text-neutral-400 leading-relaxed">
+                  Photos captured on this phone upload directly to your live cloud gallery over <strong>4G, 5G, or Wi-Fi</strong>. Zero local setup required!
+                </p>
 
-              <div className="grid grid-cols-3 gap-2">
-                <div className="col-span-2">
-                  <label className="text-[10px] text-neutral-400">Server / IP</label>
-                  <input
-                    type="text"
-                    value={config.ftpHost}
-                    onChange={(e) => setConfig((p) => ({ ...p, ftpHost: e.target.value }))}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-xs text-white"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] text-neutral-400">Port</label>
-                  <input
-                    type="number"
-                    value={config.ftpPort}
-                    onChange={(e) => setConfig((p) => ({ ...p, ftpPort: Number(e.target.value) }))}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-xs text-white"
-                  />
+                {/* Test Handshake Button */}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={handleTestConnection}
+                    disabled={connectionTestStatus === "testing"}
+                    className="w-full py-2 bg-emerald-950/40 hover:bg-emerald-900/50 border border-emerald-500/30 text-xs font-semibold rounded-xl text-emerald-300 transition-colors flex items-center justify-center space-x-2"
+                  >
+                    {connectionTestStatus === "testing" ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Testing Cloud Handshake...</span>
+                      </>
+                    ) : connectionTestStatus === "success" ? (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-emerald-400">Connected to Cloud Gallery ({connectionLatency}ms)</span>
+                      </>
+                    ) : connectionTestStatus === "failed" ? (
+                      <>
+                        <XCircle className="w-3.5 h-3.5 text-rose-400" />
+                        <span className="text-rose-400">Connection Failed. Check Internet</span>
+                      </>
+                    ) : (
+                      <>
+                        <Wifi className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Test Cloud Connection</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
+            ) : (
+              /* FTP Companion Settings (Local Bridge) */
+              <div className="space-y-3 bg-neutral-950 p-4 rounded-2xl border border-neutral-800/80">
+                <div className="text-xs font-bold text-amber-400 flex items-center justify-between">
+                  <span>Local FTP Companion Bridge</span>
+                  <span className="text-[10px] text-neutral-500 font-mono">:2121</span>
+                </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-[10px] text-neutral-400">Username</label>
-                  <input
-                    type="text"
-                    value={config.ftpUser}
-                    onChange={(e) => setConfig((p) => ({ ...p, ftpUser: e.target.value }))}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-xs text-white"
-                  />
+                <div className="p-2.5 bg-amber-500/10 border border-amber-500/20 rounded-xl text-[11px] text-amber-300 leading-tight">
+                  ⚠️ <strong>Notice:</strong> FTP requires your iPhone to be on the <strong>same Wi-Fi or Hotspot</strong> as your Android Companion device. It will NOT work on 4G cellular data.
                 </div>
-                <div>
-                  <label className="text-[10px] text-neutral-400">Password</label>
-                  <input
-                    type="password"
-                    value={config.ftpPass}
-                    onChange={(e) => setConfig((p) => ({ ...p, ftpPass: e.target.value }))}
-                    className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-xs text-white"
-                  />
-                </div>
-              </div>
 
-              {/* Test Handshake Button */}
-              <div className="pt-1">
-                <button
-                  type="button"
-                  onClick={handleTestConnection}
-                  disabled={connectionTestStatus === "testing"}
-                  className="w-full py-2 bg-neutral-800 hover:bg-neutral-700 text-xs font-semibold rounded-xl text-neutral-200 transition-colors flex items-center justify-center space-x-2"
-                >
-                  {connectionTestStatus === "testing" ? (
-                    <>
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      <span>Testing Handshake...</span>
-                    </>
-                  ) : connectionTestStatus === "success" ? (
-                    <>
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                      <span className="text-emerald-400">Handshake ACK ({connectionLatency}ms)</span>
-                    </>
-                  ) : connectionTestStatus === "failed" ? (
-                    <>
-                      <XCircle className="w-3.5 h-3.5 text-rose-400" />
-                      <span className="text-rose-400">Handshake Failed</span>
-                    </>
-                  ) : (
-                    <>
-                      <Wifi className="w-3.5 h-3.5 text-neutral-400" />
-                      <span>Test Connection</span>
-                    </>
-                  )}
-                </button>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="col-span-2">
+                    <label className="text-[10px] text-neutral-400">Server / IP</label>
+                    <input
+                      type="text"
+                      value={config.ftpHost}
+                      onChange={(e) => setConfig((p) => ({ ...p, ftpHost: e.target.value }))}
+                      className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-neutral-400">Port</label>
+                    <input
+                      type="number"
+                      value={config.ftpPort}
+                      onChange={(e) => setConfig((p) => ({ ...p, ftpPort: Number(e.target.value) }))}
+                      className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-xs text-white"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] text-neutral-400">Username</label>
+                    <input
+                      type="text"
+                      value={config.ftpUser}
+                      onChange={(e) => setConfig((p) => ({ ...p, ftpUser: e.target.value }))}
+                      className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-xs text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-neutral-400">Password</label>
+                    <input
+                      type="password"
+                      value={config.ftpPass}
+                      onChange={(e) => setConfig((p) => ({ ...p, ftpPass: e.target.value }))}
+                      className="w-full bg-neutral-900 border border-neutral-800 rounded-lg px-2.5 py-1.5 text-xs text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Test Handshake Button */}
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={handleTestConnection}
+                    disabled={connectionTestStatus === "testing"}
+                    className="w-full py-2 bg-neutral-800 hover:bg-neutral-700 text-xs font-semibold rounded-xl text-neutral-200 transition-colors flex items-center justify-center space-x-2"
+                  >
+                    {connectionTestStatus === "testing" ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Testing Handshake...</span>
+                      </>
+                    ) : connectionTestStatus === "success" ? (
+                      <>
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-emerald-400">Backend Reachable ({connectionLatency}ms)</span>
+                      </>
+                    ) : connectionTestStatus === "failed" ? (
+                      <>
+                        <XCircle className="w-3.5 h-3.5 text-rose-400" />
+                        <span className="text-rose-400">Handshake Failed (Check Wi-Fi)</span>
+                      </>
+                    ) : (
+                      <>
+                        <Wifi className="w-3.5 h-3.5 text-neutral-400" />
+                        <span>Test Connection</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* PhotoSync Autotransfer Toggles */}
             <div className="space-y-3">
