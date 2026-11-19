@@ -1,12 +1,41 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Heart, Menu, Camera } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import weddingLogo from "../../assets/wedding-logo.png";
+import { CAMERA_PERMISSION_OPEN_EVENT, CAMERA_PERMISSION_GRANTED_KEY } from "../ui/CameraPermissionModal";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleScanFaceClick = (e: React.MouseEvent) => {
+    if (location.pathname === "/photos") return;
+    e.preventDefault();
+
+    if (typeof navigator !== "undefined" && typeof navigator.permissions?.query === "function") {
+      navigator.permissions.query({ name: "camera" as PermissionName }).then((perm) => {
+        if (perm.state === "granted") {
+          navigate("/photos?autoScan=true");
+        } else {
+          window.dispatchEvent(new CustomEvent(CAMERA_PERMISSION_OPEN_EVENT));
+        }
+      }).catch(() => {
+        window.dispatchEvent(new CustomEvent(CAMERA_PERMISSION_OPEN_EVENT));
+      });
+      return;
+    }
+
+    try {
+      if (localStorage.getItem(CAMERA_PERMISSION_GRANTED_KEY) === "true") {
+        navigate("/photos?autoScan=true");
+        return;
+      }
+    } catch (_) {}
+
+    window.dispatchEvent(new CustomEvent(CAMERA_PERMISSION_OPEN_EVENT));
+  };
 
   const navLinks = [
     { name: "Home", path: "/" },
@@ -69,12 +98,13 @@ export default function Header() {
             LIVE
           </div>
           
-          <Link
-            to="/photos"
-            className="bg-primary text-primary-foreground px-5 py-2 rounded-full text-xs sm:text-sm font-medium hover:bg-primary/90 transition-all shadow-sm"
+          <button
+            type="button"
+            onClick={handleScanFaceClick}
+            className="bg-primary text-primary-foreground px-5 py-2 rounded-full text-xs sm:text-sm font-medium hover:bg-primary/90 transition-all shadow-sm cursor-pointer"
           >
             Scan Face
-          </Link>
+          </button>
         </div>
 
         {/* Mobile Menu Toggle */}
@@ -116,13 +146,16 @@ export default function Header() {
                   </span>
                   LIVE
                 </div>
-                <Link
-                  to="/photos"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="bg-primary text-primary-foreground px-5 py-2 rounded-full text-xs font-medium"
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    setMobileMenuOpen(false);
+                    handleScanFaceClick(e);
+                  }}
+                  className="bg-primary text-primary-foreground px-5 py-2 rounded-full text-xs font-medium cursor-pointer"
                 >
                   Scan Face
-                </Link>
+                </button>
                 <Link
                   to="/photographer/login"
                   onClick={() => setMobileMenuOpen(false)}

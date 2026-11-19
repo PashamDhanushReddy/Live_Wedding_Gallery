@@ -1,28 +1,40 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-test('Camera Permission: detects first-time visit vs returning visitor', () => {
-  const CAMERA_PERMISSION_KEY = 'wedding_camera_permission_requested';
-
+test('Camera Permission: asks permission only when user clicks [Scan Face & View My Photos]', () => {
+  const CAMERA_PERMISSION_GRANTED_KEY = 'wedding_camera_permission_granted';
   const mockStorage = new Map();
 
-  function isFirstTimeVisit(storage) {
-    return !storage.get(CAMERA_PERMISSION_KEY);
+  let dispatchedEvent = null;
+  let navigatedTo = null;
+
+  function handleScanFaceClick({ isBrowserPermissionGranted = false }) {
+    if (isBrowserPermissionGranted || mockStorage.get(CAMERA_PERMISSION_GRANTED_KEY) === 'true') {
+      navigatedTo = '/photos?autoScan=true';
+      return;
+    }
+
+    // Must dispatch open permission prompt when user clicks [Scan Face & View My Photos]
+    dispatchedEvent = 'wedding_open_camera_permission';
   }
 
-  function markPermissionPrompted(storage) {
-    storage.set(CAMERA_PERMISSION_KEY, 'true');
-  }
+  // 1. Initial page load: user has NOT clicked the button. No event or navigation must happen.
+  assert.equal(dispatchedEvent, null, 'No permission prompt should be triggered on initial website open');
+  assert.equal(navigatedTo, null);
 
-  // First visit: storage is empty
-  assert.equal(isFirstTimeVisit(mockStorage), true, 'First visit should detect no previous permission prompt');
+  // 2. User clicks [Scan Face & View My Photos] for the first time
+  handleScanFaceClick({ isBrowserPermissionGranted: false });
+  assert.equal(dispatchedEvent, 'wedding_open_camera_permission', 'Must trigger camera permission prompt when clicking [Scan Face & View My Photos]');
+  assert.equal(navigatedTo, null);
 
-  // User completes or responds to permission prompt
-  markPermissionPrompted(mockStorage);
+  // 3. User grants camera permission
+  mockStorage.set(CAMERA_PERMISSION_GRANTED_KEY, 'true');
+  dispatchedEvent = null;
 
-  // Subsequent visit: storage has key
-  assert.equal(isFirstTimeVisit(mockStorage), false, 'Subsequent visits should not re-trigger permission prompt');
-  assert.equal(mockStorage.get(CAMERA_PERMISSION_KEY), 'true');
+  // 4. User clicks [Scan Face & View My Photos] again (already granted)
+  handleScanFaceClick({ isBrowserPermissionGranted: true });
+  assert.equal(dispatchedEvent, null, 'Should not prompt again if permission was already granted');
+  assert.equal(navigatedTo, '/photos?autoScan=true', 'Must navigate with autoScan=true when permission is active');
 });
 
 test('Camera Permission: immediately stops tracks upon permission verification', async () => {
@@ -47,7 +59,6 @@ test('Camera Permission: immediately stops tracks upon permission verification',
     },
   };
 
-  // Simulating requestPermission logic
   function handlePermissionVerification(stream) {
     stream.getTracks().forEach(track => {
       track.stop();
@@ -70,7 +81,6 @@ test('Camera Permission: falls back gracefully when auto-request requires user g
       status = 'granted';
     } catch (err) {
       if (isAuto) {
-        // iOS Safari / gesture requirement: leave in idle for user button tap
         status = 'idle';
       } else {
         status = 'denied';
@@ -78,7 +88,7 @@ test('Camera Permission: falls back gracefully when auto-request requires user g
     }
   }
 
-  // 1. Simulating iOS Safari rejecting unprompted getUserMedia on page load
+  // 1. Simulating iOS Safari rejecting unprompted getUserMedia
   const safariAutoReject = async () => {
     const err = new Error('The request is not allowed by the user agent in the current context.');
     err.name = 'NotAllowedError';

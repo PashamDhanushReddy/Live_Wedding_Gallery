@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Camera, RefreshCw, Upload, Lock, ShieldCheck, AlertCircle, Sparkles, X, ScanFace } from "lucide-react";
 import { API_BASE_URL, WEDDING_SLUG } from "../../config";
 import type { GalleryPhotoItem } from "./GalleryPhotoCard";
@@ -35,6 +36,7 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
   const [statusMessage, setStatusMessage] = useState<string>("Camera is closed. Tap below to begin face scan.");
   const [scanStatus, setScanStatus] = useState<"idle" | "scanning" | "processing" | "no_match" | "no_face" | "error">("idle");
   const [capturedThumbnail, setCapturedThumbnail] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
 
   // Closes camera hardware immediately and releases all tracks
   const stopCamera = () => {
@@ -151,7 +153,7 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
     };
   }, []);
 
-  // Auto-launch scan if user just granted camera permission via the first-visit modal
+  // Auto-launch scan if user just granted camera permission via the modal or navigated with autoScan
   useEffect(() => {
     const handleCameraGranted = () => {
       if (!isCameraActive && !isProcessing && scanStatus === "idle") {
@@ -159,11 +161,15 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
       }
     };
 
+    if (searchParams.get("autoScan") === "true" && !isCameraActive && !isProcessing && scanStatus === "idle") {
+      startCamera();
+    }
+
     window.addEventListener("wedding_camera_permission_granted", handleCameraGranted);
     return () => {
       window.removeEventListener("wedding_camera_permission_granted", handleCameraGranted);
     };
-  }, [isCameraActive, isProcessing, scanStatus]);
+  }, [searchParams, isCameraActive, isProcessing, scanStatus]);
 
   const captureFrameBlob = (): Promise<{ blob: Blob; dataUrl: string } | null> => {
     return new Promise((resolve) => {

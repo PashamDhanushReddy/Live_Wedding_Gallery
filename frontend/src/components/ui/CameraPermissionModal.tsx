@@ -1,56 +1,32 @@
 import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Camera, ShieldCheck, CheckCircle2, X, AlertCircle, RefreshCw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import weddingLogo from "../../assets/wedding-logo.png";
 
 export const CAMERA_PERMISSION_KEY = "wedding_camera_permission_requested";
+export const CAMERA_PERMISSION_GRANTED_KEY = "wedding_camera_permission_granted";
 export const CAMERA_PERMISSION_EVENT = "wedding_camera_permission_granted";
+export const CAMERA_PERMISSION_OPEN_EVENT = "wedding_open_camera_permission";
 
 export default function CameraPermissionModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [status, setStatus] = useState<"idle" | "requesting" | "granted" | "denied" | "unsupported">("idle");
   const [message, setMessage] = useState<string>("");
   const closeTimerRef = useRef<any>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if permission prompt was already handled in a previous visit
-    try {
-      const alreadyPrompted = localStorage.getItem(CAMERA_PERMISSION_KEY);
-      if (alreadyPrompted) {
-        return;
-      }
-    } catch (_) {
-      // In case localStorage is disabled or restricted
-    }
-
-    const checkAndPrompt = async () => {
-      // Check if browser already granted camera permission
-      if (typeof navigator !== "undefined" && typeof navigator.permissions?.query === "function") {
-        try {
-          const perm = await navigator.permissions.query({ name: "camera" as PermissionName });
-          if (perm.state === "granted") {
-            try {
-              localStorage.setItem(CAMERA_PERMISSION_KEY, "true");
-            } catch (_) {}
-            return;
-          }
-        } catch (_) {
-          // Permissions API query for camera not supported on all platforms (e.g. Safari)
-        }
-      }
-
-      // First time opening the website: display the permission modal
+    // Only open when explicitly requested (e.g. user clicks [Scan Face & View My Photos])
+    const handleOpen = () => {
       setIsOpen(true);
-
-      // Attempt automatic browser permission prompt on page load
-      if (typeof navigator !== "undefined" && typeof navigator.mediaDevices?.getUserMedia === "function") {
-        requestPermission(true);
-      }
+      setStatus("idle");
+      setMessage("");
     };
 
-    checkAndPrompt();
-
+    window.addEventListener(CAMERA_PERMISSION_OPEN_EVENT, handleOpen);
     return () => {
+      window.removeEventListener(CAMERA_PERMISSION_OPEN_EVENT, handleOpen);
       if (closeTimerRef.current) {
         clearTimeout(closeTimerRef.current);
       }
@@ -61,18 +37,21 @@ export default function CameraPermissionModal() {
     if (typeof navigator === "undefined" || typeof navigator.mediaDevices?.getUserMedia !== "function") {
       if (!isAuto) {
         setStatus("unsupported");
-        setMessage("Camera access is not supported by your browser. You can still upload photos directly.");
+        setMessage("Camera access is not supported on this browser. You can still upload a selfie.");
         try {
           localStorage.setItem(CAMERA_PERMISSION_KEY, "true");
         } catch (_) {}
-        closeTimerRef.current = setTimeout(() => setIsOpen(false), 3000);
+        closeTimerRef.current = setTimeout(() => {
+          setIsOpen(false);
+          navigate("/photos");
+        }, 2200);
       }
       return;
     }
 
     setStatus("requesting");
     if (!isAuto) {
-      setMessage("Please choose 'Allow' on the browser prompt...");
+      setMessage("Please choose 'Allow' on your browser prompt...");
     }
 
     try {
@@ -81,7 +60,7 @@ export default function CameraPermissionModal() {
         audio: false,
       });
 
-      // Permission granted! Immediately release camera hardware so camera indicator turns off
+      // Permission granted! Immediately release camera hardware
       stream.getTracks().forEach((track) => {
         try {
           track.stop();
@@ -89,24 +68,23 @@ export default function CameraPermissionModal() {
       });
 
       setStatus("granted");
-      setMessage("Camera permission granted! You are all set to find your photos.");
+      setMessage("Camera permission granted! Opening face scanner...");
       try {
         localStorage.setItem(CAMERA_PERMISSION_KEY, "true");
+        localStorage.setItem(CAMERA_PERMISSION_GRANTED_KEY, "true");
       } catch (_) {}
 
-      // Notify any active components (e.g. FaceScanner) that camera permission was granted
+      // Notify any active components that camera permission was granted
       window.dispatchEvent(new CustomEvent(CAMERA_PERMISSION_EVENT));
 
       closeTimerRef.current = setTimeout(() => {
         setIsOpen(false);
-      }, 1500);
+        navigate("/photos?autoScan=true");
+      }, 1200);
     } catch (err: any) {
       if (isAuto) {
-        // If automatic request failed (e.g., iOS Safari requires a direct tap / user gesture),
-        // keep modal open in idle state so the user can tap the button
         setStatus("idle");
       } else {
-        // User explicitly tapped and permission was blocked or cancelled
         setStatus("denied");
         setMessage(
           err.name === "NotAllowedError" || err.name === "PermissionDeniedError"
@@ -119,7 +97,8 @@ export default function CameraPermissionModal() {
 
         closeTimerRef.current = setTimeout(() => {
           setIsOpen(false);
-        }, 3000);
+          navigate("/photos");
+        }, 2500);
       }
     }
   };
@@ -129,6 +108,14 @@ export default function CameraPermissionModal() {
       localStorage.setItem(CAMERA_PERMISSION_KEY, "true");
     } catch (_) {}
     setIsOpen(false);
+  };
+
+  const handleContinueWithoutCamera = () => {
+    try {
+      localStorage.setItem(CAMERA_PERMISSION_KEY, "true");
+    } catch (_) {}
+    setIsOpen(false);
+    navigate("/photos");
   };
 
   if (!isOpen) return null;
@@ -187,7 +174,7 @@ export default function CameraPermissionModal() {
           </h3>
 
           <p className="text-xs sm:text-sm text-[#736363] leading-relaxed mb-5">
-            Welcome to our live wedding gallery! To automatically locate and personalize photos of you using our private face recognition, please grant camera access.
+            To automatically locate and personalize photos of you using our private face recognition, please grant camera access.
           </p>
 
           {/* Privacy Protection Callout */}
@@ -257,7 +244,7 @@ export default function CameraPermissionModal() {
 
               <button
                 type="button"
-                onClick={handleDismiss}
+                onClick={handleContinueWithoutCamera}
                 className="w-full py-2.5 px-4 text-stone-500 hover:text-stone-700 text-xs font-medium transition-colors cursor-pointer"
               >
                 Continue Without Camera

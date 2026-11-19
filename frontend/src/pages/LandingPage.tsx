@@ -1,10 +1,38 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Calendar, MapPin, ScanFace, ShieldCheck } from "lucide-react";
 import bgImage from "../assets/bg_blue.png";
 import mobileBg from "../assets/mobile_bg.png";
 import weddingLogo from "../assets/wedding-logo.png";
+import { CAMERA_PERMISSION_OPEN_EVENT, CAMERA_PERMISSION_GRANTED_KEY } from "../components/ui/CameraPermissionModal";
 
 export default function LandingPage() {
+  const navigate = useNavigate();
+
+  const handleScanFaceClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    // 1. Check if camera permission was already granted in browser
+    if (typeof navigator !== "undefined" && typeof navigator.permissions?.query === "function") {
+      try {
+        const perm = await navigator.permissions.query({ name: "camera" as PermissionName });
+        if (perm.state === "granted") {
+          navigate("/photos?autoScan=true");
+          return;
+        }
+      } catch (_) {}
+    }
+
+    // 2. Check if camera permission was already granted previously on this device
+    try {
+      if (localStorage.getItem(CAMERA_PERMISSION_GRANTED_KEY) === "true") {
+        navigate("/photos?autoScan=true");
+        return;
+      }
+    } catch (_) {}
+
+    // 3. Ask camera permission when user clicks [Scan Face & View My Photos]
+    window.dispatchEvent(new CustomEvent(CAMERA_PERMISSION_OPEN_EVENT));
+  };
   return (
     <div className="min-h-screen relative overflow-x-hidden bg-[#faf7f5]">
       {/* Background for Desktop */}
@@ -84,13 +112,14 @@ export default function LandingPage() {
         
         {/* Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 mb-4 z-20">
-          <Link 
-            to="/photos" 
-            className="flex items-center justify-center gap-2 bg-[#a07171] text-white px-8 py-3.5 rounded-full font-medium hover:bg-[#8a5f5f] transition-all shadow-md active:scale-98"
+          <button 
+            type="button"
+            onClick={handleScanFaceClick}
+            className="flex items-center justify-center gap-2 bg-[#a07171] text-white px-8 py-3.5 rounded-full font-medium hover:bg-[#8a5f5f] transition-all shadow-md active:scale-98 cursor-pointer"
           >
             <ScanFace className="w-5 h-5" />
             Scan Face & View My Photos
-          </Link>
+          </button>
         </div>
 
         {/* Privacy Assurance Pill */}
