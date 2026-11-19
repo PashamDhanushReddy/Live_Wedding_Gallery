@@ -151,6 +151,20 @@ export default function FaceScanner({ onPhotosFound, isOverlay = false }: FaceSc
     };
   }, []);
 
+  // Auto-launch scan if user just granted camera permission via the first-visit modal
+  useEffect(() => {
+    const handleCameraGranted = () => {
+      if (!isCameraActive && !isProcessing && scanStatus === "idle") {
+        startCamera();
+      }
+    };
+
+    window.addEventListener("wedding_camera_permission_granted", handleCameraGranted);
+    return () => {
+      window.removeEventListener("wedding_camera_permission_granted", handleCameraGranted);
+    };
+  }, [isCameraActive, isProcessing, scanStatus]);
+
   const captureFrameBlob = (): Promise<{ blob: Blob; dataUrl: string } | null> => {
     return new Promise((resolve) => {
       if (!videoRef.current) return resolve(null);

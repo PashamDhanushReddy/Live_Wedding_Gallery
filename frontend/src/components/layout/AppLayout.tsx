@@ -1,5 +1,6 @@
 import { Outlet } from "react-router-dom";
 import Header from "./Header";
+import CameraPermissionModal from "../ui/CameraPermissionModal";
 
 export default function AppLayout() {
   return (
@@ -8,6 +9,7 @@ export default function AppLayout() {
       <main className="flex-1">
         <Outlet />
       </main>
+      <CameraPermissionModal />
     </div>
   );
 }
