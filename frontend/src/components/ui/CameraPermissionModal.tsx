@@ -18,7 +18,17 @@ export default function CameraPermissionModal() {
 
   useEffect(() => {
     // Only open when explicitly requested (e.g. user clicks [Scan Face & View My Photos])
+    // and ONLY if this is their first time
     const handleOpen = () => {
+      try {
+        const alreadyPrompted = localStorage.getItem(CAMERA_PERMISSION_KEY) === "true";
+        if (alreadyPrompted) {
+          const wasGranted = localStorage.getItem(CAMERA_PERMISSION_GRANTED_KEY) === "true";
+          navigate(wasGranted ? "/photos?autoScan=true" : "/photos");
+          return;
+        }
+      } catch (_) {}
+
       setIsOpen(true);
       setStatus("idle");
       setMessage("");

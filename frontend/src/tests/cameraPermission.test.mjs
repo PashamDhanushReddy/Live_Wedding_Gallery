@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-test('Camera Permission: asks permission only when user clicks [Scan Face & View My Photos]', () => {
+test('Camera Permission: asks permission only on first visit when user clicks [Scan Face & View My Photos]', () => {
+  const CAMERA_PERMISSION_KEY = 'wedding_camera_permission_requested';
   const CAMERA_PERMISSION_GRANTED_KEY = 'wedding_camera_permission_granted';
   const mockStorage = new Map();
 
@@ -9,12 +10,26 @@ test('Camera Permission: asks permission only when user clicks [Scan Face & View
   let navigatedTo = null;
 
   function handleScanFaceClick({ isBrowserPermissionGranted = false }) {
-    if (isBrowserPermissionGranted || mockStorage.get(CAMERA_PERMISSION_GRANTED_KEY) === 'true') {
+    dispatchedEvent = null;
+    navigatedTo = null;
+
+    const alreadyPrompted = mockStorage.get(CAMERA_PERMISSION_KEY) === 'true';
+    const wasGranted = mockStorage.get(CAMERA_PERMISSION_GRANTED_KEY) === 'true';
+
+    // Returning visitor: MUST NOT ask again on subsequent visits!
+    if (alreadyPrompted) {
+      navigatedTo = wasGranted ? '/photos?autoScan=true' : '/photos';
+      return;
+    }
+
+    if (isBrowserPermissionGranted || wasGranted) {
+      mockStorage.set(CAMERA_PERMISSION_KEY, 'true');
+      mockStorage.set(CAMERA_PERMISSION_GRANTED_KEY, 'true');
       navigatedTo = '/photos?autoScan=true';
       return;
     }
 
-    // Must dispatch open permission prompt when user clicks [Scan Face & View My Photos]
+    // First time only: dispatch open permission prompt
     dispatchedEvent = 'wedding_open_camera_permission';
   }
 
@@ -22,19 +37,35 @@ test('Camera Permission: asks permission only when user clicks [Scan Face & View
   assert.equal(dispatchedEvent, null, 'No permission prompt should be triggered on initial website open');
   assert.equal(navigatedTo, null);
 
-  // 2. User clicks [Scan Face & View My Photos] for the first time
+  // 2. User clicks [Scan Face & View My Photos] for the FIRST TIME
   handleScanFaceClick({ isBrowserPermissionGranted: false });
-  assert.equal(dispatchedEvent, 'wedding_open_camera_permission', 'Must trigger camera permission prompt when clicking [Scan Face & View My Photos]');
+  assert.equal(dispatchedEvent, 'wedding_open_camera_permission', 'Must trigger camera permission prompt when clicking for the first time');
   assert.equal(navigatedTo, null);
 
-  // 3. User grants camera permission
+  // 3. User responds to the prompt (e.g. grants camera access)
+  mockStorage.set(CAMERA_PERMISSION_KEY, 'true');
   mockStorage.set(CAMERA_PERMISSION_GRANTED_KEY, 'true');
-  dispatchedEvent = null;
 
-  // 4. User clicks [Scan Face & View My Photos] again (already granted)
+  // 4. SUBSEQUENT VISITS: User visits website again and clicks [Scan Face & View My Photos]
   handleScanFaceClick({ isBrowserPermissionGranted: true });
-  assert.equal(dispatchedEvent, null, 'Should not prompt again if permission was already granted');
-  assert.equal(navigatedTo, '/photos?autoScan=true', 'Must navigate with autoScan=true when permission is active');
+  assert.equal(dispatchedEvent, null, 'MUST NOT ask for permission on subsequent visits');
+  assert.equal(navigatedTo, '/photos?autoScan=true', 'Must navigate directly to photos with autoScan=true');
+
+  // 5. Subsequent visit when user previously continued without camera (declined):
+  const mockStorageDeclined = new Map();
+  mockStorageDeclined.set(CAMERA_PERMISSION_KEY, 'true');
+  mockStorageDeclined.set(CAMERA_PERMISSION_GRANTED_KEY, 'false');
+
+  function handleScanFaceClickDeclined() {
+    const alreadyPrompted = mockStorageDeclined.get(CAMERA_PERMISSION_KEY) === 'true';
+    const wasGranted = mockStorageDeclined.get(CAMERA_PERMISSION_GRANTED_KEY) === 'true';
+    if (alreadyPrompted) {
+      return wasGranted ? '/photos?autoScan=true' : '/photos';
+    }
+    return 'prompt';
+  }
+
+  assert.equal(handleScanFaceClickDeclined(), '/photos', 'Returning user who declined previously must not be prompted again');
 });
 
 test('Camera Permission: immediately stops tracks upon permission verification', async () => {

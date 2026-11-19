@@ -3,7 +3,7 @@ import { Heart, Menu, Camera } from "lucide-react";
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import weddingLogo from "../../assets/wedding-logo.png";
-import { CAMERA_PERMISSION_OPEN_EVENT, CAMERA_PERMISSION_GRANTED_KEY } from "../ui/CameraPermissionModal";
+import { CAMERA_PERMISSION_OPEN_EVENT, CAMERA_PERMISSION_KEY, CAMERA_PERMISSION_GRANTED_KEY } from "../ui/CameraPermissionModal";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -14,9 +14,22 @@ export default function Header() {
     if (location.pathname === "/photos") return;
     e.preventDefault();
 
+    try {
+      const alreadyPrompted = localStorage.getItem(CAMERA_PERMISSION_KEY) === "true";
+      const wasGranted = localStorage.getItem(CAMERA_PERMISSION_GRANTED_KEY) === "true";
+      if (alreadyPrompted) {
+        navigate(wasGranted ? "/photos?autoScan=true" : "/photos");
+        return;
+      }
+    } catch (_) {}
+
     if (typeof navigator !== "undefined" && typeof navigator.permissions?.query === "function") {
       navigator.permissions.query({ name: "camera" as PermissionName }).then((perm) => {
         if (perm.state === "granted") {
+          try {
+            localStorage.setItem(CAMERA_PERMISSION_KEY, "true");
+            localStorage.setItem(CAMERA_PERMISSION_GRANTED_KEY, "true");
+          } catch (_) {}
           navigate("/photos?autoScan=true");
         } else {
           window.dispatchEvent(new CustomEvent(CAMERA_PERMISSION_OPEN_EVENT));
@@ -26,13 +39,6 @@ export default function Header() {
       });
       return;
     }
-
-    try {
-      if (localStorage.getItem(CAMERA_PERMISSION_GRANTED_KEY) === "true") {
-        navigate("/photos?autoScan=true");
-        return;
-      }
-    } catch (_) {}
 
     window.dispatchEvent(new CustomEvent(CAMERA_PERMISSION_OPEN_EVENT));
   };

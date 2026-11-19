@@ -3,7 +3,7 @@ import { Calendar, MapPin, ScanFace, ShieldCheck } from "lucide-react";
 import bgImage from "../assets/bg_blue.png";
 import mobileBg from "../assets/mobile_bg.png";
 import weddingLogo from "../assets/wedding-logo.png";
-import { CAMERA_PERMISSION_OPEN_EVENT, CAMERA_PERMISSION_GRANTED_KEY } from "../components/ui/CameraPermissionModal";
+import { CAMERA_PERMISSION_OPEN_EVENT, CAMERA_PERMISSION_KEY, CAMERA_PERMISSION_GRANTED_KEY } from "../components/ui/CameraPermissionModal";
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -11,26 +11,32 @@ export default function LandingPage() {
   const handleScanFaceClick = async (e: React.MouseEvent) => {
     e.preventDefault();
 
-    // 1. Check if camera permission was already granted in browser
+    // 1. If user has already visited and been asked previously, do not ask every time!
+    try {
+      const alreadyPrompted = localStorage.getItem(CAMERA_PERMISSION_KEY) === "true";
+      const wasGranted = localStorage.getItem(CAMERA_PERMISSION_GRANTED_KEY) === "true";
+      if (alreadyPrompted) {
+        navigate(wasGranted ? "/photos?autoScan=true" : "/photos");
+        return;
+      }
+    } catch (_) {}
+
+    // 2. Check if camera permission was already granted in browser
     if (typeof navigator !== "undefined" && typeof navigator.permissions?.query === "function") {
       try {
         const perm = await navigator.permissions.query({ name: "camera" as PermissionName });
         if (perm.state === "granted") {
+          try {
+            localStorage.setItem(CAMERA_PERMISSION_KEY, "true");
+            localStorage.setItem(CAMERA_PERMISSION_GRANTED_KEY, "true");
+          } catch (_) {}
           navigate("/photos?autoScan=true");
           return;
         }
       } catch (_) {}
     }
 
-    // 2. Check if camera permission was already granted previously on this device
-    try {
-      if (localStorage.getItem(CAMERA_PERMISSION_GRANTED_KEY) === "true") {
-        navigate("/photos?autoScan=true");
-        return;
-      }
-    } catch (_) {}
-
-    // 3. Ask camera permission when user clicks [Scan Face & View My Photos]
+    // 3. Ask camera permission only for the first time
     window.dispatchEvent(new CustomEvent(CAMERA_PERMISSION_OPEN_EVENT));
   };
   return (
